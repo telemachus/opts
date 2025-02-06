@@ -31,6 +31,8 @@ func newFloat64Value(val float64, f *float64) *float64Value {
 }
 
 // Float64 creates a new float64 option and binds its default value to f.
+// Float64 will panic if name is not a valid option name or if name repeats the
+// name of an existing flag.
 func (g *Group) Float64(f *float64, name string, defValue float64) {
 	if err := validateName("Float64", name); err != nil {
 		panic(err)

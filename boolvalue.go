@@ -11,12 +11,9 @@ func newBoolValue(p *bool) *boolValue {
 	return (*boolValue)(p)
 }
 
-// Bool creates a bool option with the given name. Bool options always default
-// to false. The argument p is a pointer to a bool variable that stores the
-// value of the flag.
-//
-// Bool will panic if name is not a valid option name or if
-// name repeats the name of an existing flag.
+// Bool creates a new boolean option with the value false and binds that option
+// to b. Bool will panic if name is not a valid option name or if name repeats
+// the name of an existing flag.
 func (g *Group) Bool(b *bool, name string) {
 	if err := validateName("Bool", name); err != nil {
 		panic(err)

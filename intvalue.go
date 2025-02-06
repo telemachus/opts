@@ -12,7 +12,9 @@ func newIntValue(val int, i *int) *intValue {
 	return (*intValue)(i)
 }
 
-// Int creates a new integer option and binds its default value to i.
+// Int creates a new integer option and binds its default value to i. Int will
+// panic if name is not a valid option name or if name repeats the name of an
+// existing flag.
 func (g *Group) Int(i *int, name string, defValue int) {
 	if err := validateName("Int", name); err != nil {
 		panic(err)
