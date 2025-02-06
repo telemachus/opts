@@ -17,12 +17,12 @@ func newBoolValue(p *bool) *boolValue {
 //
 // Bool will panic if name is not a valid option name or if
 // name repeats the name of an existing flag.
-func (g *Group) Bool(p *bool, name string) {
-	if err := validateName("BoolVar", name); err != nil {
+func (g *Group) Bool(b *bool, name string) {
+	if err := validateName("Bool", name); err != nil {
 		panic(err)
 	}
 
-	bv := newBoolValue(p)
+	bv := newBoolValue(b)
 	opt := &Opt{
 		value:    bv,
 		defValue: "false",

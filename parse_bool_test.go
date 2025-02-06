@@ -1,4 +1,3 @@
-// parse_bool_test.go
 package opts_test
 
 import (
