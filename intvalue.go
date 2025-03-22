@@ -14,7 +14,7 @@ func newIntValue(val int, i *int) *intValue {
 
 // Int creates a new integer option and binds its default value to i. Int will
 // panic if name is not a valid option name or if name repeats the name of an
-// existing flag.
+// existing option.
 func (g *Group) Int(i *int, name string, defValue int) {
 	if err := validateName("Int", name); err != nil {
 		panic(err)
@@ -32,6 +32,11 @@ func (g *Group) Int(i *int, name string, defValue int) {
 		panic(err)
 	}
 	g.opts[name] = opt
+}
+
+// IntZero creates a new int option that defaults to 0.
+func (g *Group) IntZero(i *int, name string) {
+	g.Int(i, name, 0)
 }
 
 // Set assigns s to an intValue and returns an error if s cannot be parsed as

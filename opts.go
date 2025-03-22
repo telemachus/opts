@@ -18,12 +18,12 @@ type Opt struct {
 	isBool   bool
 }
 
-// DefValue returns an option's default value as a string.
+// DefValue returns default value of the option as a string.
 func (o *Opt) DefValue() string {
 	return o.defValue
 }
 
-// Name returns the expected command line name of the option.
+// Name returns the command line name associated with the option.
 func (o *Opt) Name() string {
 	return o.name
 }
@@ -32,7 +32,7 @@ func (o *Opt) Name() string {
 type Group struct {
 	opts   map[string]*Opt
 	name   string
-	args   []string // arguments remaining after flag parsing
+	args   []string // arguments remaining after option parsing
 	parsed bool
 }
 
@@ -49,7 +49,7 @@ func (g *Group) Name() string {
 	return g.name
 }
 
-// All iterates over all opts in a group.
+// All iterates over the options in a group.
 func (g *Group) All() iter.Seq[*Opt] {
 	return maps.Values(g.opts)
 }

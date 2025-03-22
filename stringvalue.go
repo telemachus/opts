@@ -9,7 +9,7 @@ func newStringValue(val string, p *string) *stringValue {
 
 // String creates a new string option with the default value and binds that
 // option to s. String will panic if name is not a valid option name or if name
-// repeats the name of an existing flag.
+// repeats the name of an existing option.
 func (g *Group) String(s *string, name, defValue string) {
 	if err := validateName("String", name); err != nil {
 		panic(err)
@@ -27,6 +27,11 @@ func (g *Group) String(s *string, name, defValue string) {
 		panic(err)
 	}
 	g.opts[name] = opt
+}
+
+// StringZero creates a new string option that defaults to "".
+func (g *Group) StringZero(s *string, name string) {
+	g.String(s, name, "")
 }
 
 // Set assigns s to a stringValue. The method always returns a nil error since

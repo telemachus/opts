@@ -8,8 +8,8 @@ import (
 // Parse scans args and sets option values defined in the [Group].
 //
 // Parse must be called after all options are defined and before option values
-// are used. If Parse returns without error, the Group is considered parsed
-// and any subsequent calls to Parse will return [ErrAlreadyParsed].
+// are used. If Parse returns without error, the Group is considered parsed and
+// any subsequent calls to Parse will return [ErrAlreadyParsed].
 //
 // Parsing stops at the first non-option argument. Any remaining arguments can
 // be accessed via Args(). Both '-' and '--' are treated as non-option
@@ -45,12 +45,10 @@ func (g *Group) parse(args []string) error {
 		arg := args[0]
 		args = args[1:]
 
-		var (
-			isEmpty    = arg == ""
-			noDash     = !isEmpty && arg[0] != '-'
-			singleDash = arg == "-"
-			doubleDash = arg == "--"
-		)
+		isEmpty := arg == ""
+		noDash := !isEmpty && arg[0] != '-'
+		singleDash := arg == "-"
+		doubleDash := arg == "--"
 
 		switch {
 		case isEmpty, noDash, singleDash:
@@ -63,16 +61,14 @@ func (g *Group) parse(args []string) error {
 			return nil
 		}
 
-		var (
-			isLongFlag  = len(arg) > 2 && arg[0:2] == "--"
-			isShortFlag = len(arg) > 1 && arg[0] == '-' && !isLongFlag
-		)
+		isDoubleDash := len(arg) > 2 && arg[0:2] == "--"
+		isSingleDash := len(arg) > 1 && arg[0] == '-' && !isDoubleDash
 
 		var parseErr error
 		switch {
-		case isShortFlag:
+		case isSingleDash:
 			args, parseErr = g.parseOpt(arg[1:], args)
-		case isLongFlag:
+		case isDoubleDash:
 			args, parseErr = g.parseOpt(arg[2:], args)
 		}
 		if parseErr != nil {
@@ -106,9 +102,9 @@ func (g *Group) parseOpt(arg string, args []string) ([]string, error) {
 		}
 
 		// A string option `--foo=` will not produce an error when
-		// calling set above. However, for consistency with other option
-		// types, we should return an error indicating that there is no
-		// value.
+		// calling set above. However, for consistency with other
+		// option types, we should return an error indicating that
+		// there is no value.
 		if value == "" && arg[len(arg)-1] == '=' {
 			return nil, fmt.Errorf("--%s: missing value", name)
 		}
@@ -134,7 +130,7 @@ func (g *Group) parseOpt(arg string, args []string) ([]string, error) {
 	return args, nil
 }
 
-// Args returns non-flag arguments from the command line. This method should
+// Args returns non-option arguments from the command line. This method should
 // only be called after Parse has finished without error.
 func (g *Group) Args() []string {
 	return g.args

@@ -31,6 +31,11 @@ func (g *Group) Uint(u *uint, name string, defValue uint) {
 	g.opts[name] = opt
 }
 
+// UintZero creates a new uint option that defaults to 0.
+func (g *Group) UintZero(u *uint, name string) {
+	g.Uint(u, name, 0)
+}
+
 // Set assigns s to a uintValue and returns an error if s cannot be parsed as
 // a uint.
 func (u *uintValue) set(s string) error {

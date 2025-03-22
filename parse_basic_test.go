@@ -7,7 +7,7 @@ import (
 	"github.com/telemachus/opts"
 )
 
-func TestParseNoFlags(t *testing.T) {
+func TestParseNoOptions(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -44,14 +44,40 @@ func TestParseNoFlags(t *testing.T) {
 	}
 }
 
-func TestParseInvalidFlags(t *testing.T) {
+func TestParseOptions(t *testing.T) {
+	t.Parallel()
+
+	args := []string{"-V", "--name", "foobar"}
+	cfg := struct {
+		name    string
+		verbose bool
+	}{}
+
+	g := opts.NewGroup("test-parsing")
+	g.BoolZero(&cfg.verbose, "V")
+	g.String(&cfg.name, "name", "default")
+
+	err := g.Parse(args)
+	if err != nil {
+		t.Errorf("after g.Parse(%+v), err != %v; want nil", args, err)
+	}
+
+	if cfg.verbose != true {
+		t.Errorf("after g.Parse(%+v), cfg.verbose = %v; want true", args, cfg.verbose)
+	}
+	if cfg.name != args[2] {
+		t.Errorf("after g.Parse(%+v), cfg.name = %v; want %q", args, cfg.name, args[2])
+	}
+}
+
+func TestParseUndefinedOptions(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
 		args []string
 	}{
-		"Unknown short flag": {args: []string{"-x"}},
-		"Unknown long flag":  {args: []string{"--unknown"}},
+		"Unknown single-dash option": {args: []string{"-x"}},
+		"Unknown double-dash option": {args: []string{"--unknown"}},
 	}
 
 	for msg, tc := range testCases {

@@ -9,7 +9,7 @@ import (
 	"github.com/telemachus/opts"
 )
 
-func TestParseShortDurationFlag(t *testing.T) {
+func TestParseSingleDashDurationOption(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -17,37 +17,37 @@ func TestParseShortDurationFlag(t *testing.T) {
 		postArgs []string
 		want     time.Duration
 	}{
-		"Basic seconds; one dash": {
+		"Basic seconds; single dash": {
 			args:     []string{"-duration", "10s"},
 			postArgs: []string{},
 			want:     10 * time.Second,
 		},
-		"Zero; one dash": {
+		"Zero; single dash": {
 			args:     []string{"-duration", "0s"},
 			postArgs: []string{},
 			want:     0,
 		},
-		"Minutes; one dash": {
+		"Minutes; single dash": {
 			args:     []string{"-duration", "5m"},
 			postArgs: []string{},
 			want:     5 * time.Minute,
 		},
-		"Hours; one dash": {
+		"Hours; single dash": {
 			args:     []string{"-duration", "2h"},
 			postArgs: []string{},
 			want:     2 * time.Hour,
 		},
-		"Complex duration; one dash": {
+		"Complex duration; single dash": {
 			args:     []string{"-duration", "2h30m"},
 			postArgs: []string{},
 			want:     2*time.Hour + 30*time.Minute,
 		},
-		"Milliseconds; one dash": {
+		"Milliseconds; single dash": {
 			args:     []string{"-duration", "1500ms"},
 			postArgs: []string{},
 			want:     1500 * time.Millisecond,
 		},
-		"Args after value; one dash": {
+		"Args after value; single dash": {
 			args:     []string{"-duration", "1h", "foo", "bar"},
 			postArgs: []string{"foo", "bar"},
 			want:     time.Hour,
@@ -155,7 +155,7 @@ func TestParseDurationErrors(t *testing.T) {
 		"Negative without number": {
 			args: []string{"-duration", "-s"},
 		},
-		"Long multiple equals": {
+		"Double dash, multiple equals": {
 			args: []string{"--duration=1h=2h"},
 		},
 		"Unregistered option": {

@@ -84,31 +84,31 @@ func TestParseIntErrors(t *testing.T) {
 	testCases := map[string]struct {
 		args []string
 	}{
-		"Short no value": {
+		"Single dash, no value": {
 			args: []string{"-n"},
 		},
-		"Long no value": {
+		"Double dash, no value": {
 			args: []string{"--number"},
 		},
-		"Short invalid value": {
+		"Single dash, invalid value": {
 			args: []string{"-n", "xyz"},
 		},
-		"Long invalid value": {
+		"Double dash, invalid value": {
 			args: []string{"--number", "xyz"},
 		},
-		"Long equals no value": {
+		"Double dash, equals no value": {
 			args: []string{"--number="},
 		},
-		"Long equals invalid": {
+		"Double dash, equals invalid": {
 			args: []string{"--number=xyz"},
 		},
-		"Short float value": {
+		"Single dash, float value": {
 			args: []string{"-n", "3.14"},
 		},
-		"Long float value": {
+		"Double dash, float value": {
 			args: []string{"--number=3.14"},
 		},
-		"Long multiple equals": {
+		"Double dash, multiple equals": {
 			args: []string{"--number=42=13"},
 		},
 	}

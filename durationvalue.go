@@ -13,7 +13,7 @@ func newDurationValue(val time.Duration, d *time.Duration) *durationValue {
 
 // Duration creates a new time.Duration option with the default value and binds
 // that option to b. Duration will panic if name is not a valid option name or
-// if name repeats the name of an existing flag.
+// if name repeats the name of an existing option.
 func (g *Group) Duration(d *time.Duration, name string, defValue time.Duration) {
 	if err := validateName("Duration", name); err != nil {
 		panic(err)
@@ -31,6 +31,11 @@ func (g *Group) Duration(d *time.Duration, name string, defValue time.Duration) 
 		panic(err)
 	}
 	g.opts[name] = opt
+}
+
+// DurationZero creates a new duration option that defaults to 0.
+func (g *Group) DurationZero(d *time.Duration, name string) {
+	g.Duration(d, name, 0)
 }
 
 func (d *durationValue) set(s string) error {

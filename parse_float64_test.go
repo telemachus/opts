@@ -104,28 +104,28 @@ func TestParseFloat64Errors(t *testing.T) {
 	testCases := map[string]struct {
 		args []string
 	}{
-		"Short no value": {
+		"Single dash, no value": {
 			args: []string{"-x"},
 		},
-		"Long no value": {
+		"Double dash, no value": {
 			args: []string{"--value"},
 		},
-		"Short invalid value": {
+		"Single dash, invalid value": {
 			args: []string{"-x", "xyz"},
 		},
-		"Long invalid value": {
+		"Double dash, invalid value": {
 			args: []string{"--value", "xyz"},
 		},
-		"Long equals no value": {
+		"Double dash, equals no value": {
 			args: []string{"--value="},
 		},
-		"Long equals invalid": {
+		"Double dash, equals invalid": {
 			args: []string{"--value=xyz"},
 		},
-		"Invalid scientific notation": {
+		"Double dash, invalid scientific notation": {
 			args: []string{"--value=1e"},
 		},
-		"Long multiple equals": {
+		"Double dash, multiple equals": {
 			args: []string{"--value=3.14=2.718"},
 		},
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/telemachus/opts"
 )
 
-func TestParseShortUintFlag(t *testing.T) {
+func TestParseSingleDashUintOption(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -15,27 +15,27 @@ func TestParseShortUintFlag(t *testing.T) {
 		postArgs []string
 		want     uint
 	}{
-		"Basic value; one dash": {
+		"Basic value; single dash": {
 			args:     []string{"-n", "42"},
 			postArgs: []string{},
 			want:     42,
 		},
-		"Zero; one dash": {
+		"Zero; single dash": {
 			args:     []string{"-n", "0"},
 			postArgs: []string{},
 			want:     0,
 		},
-		"Hex value; one dash": {
+		"Hex value; single dash": {
 			args:     []string{"-n", "0xff"},
 			postArgs: []string{},
 			want:     255,
 		},
-		"Octal value; one dash": {
+		"Octal value; single dash": {
 			args:     []string{"-n", "0644"},
 			postArgs: []string{},
 			want:     420,
 		},
-		"Args after value; one dash": {
+		"Args after value; single dash": {
 			args:     []string{"-n", "42", "foo", "bar"},
 			postArgs: []string{"foo", "bar"},
 			want:     42,
@@ -104,37 +104,37 @@ func TestParseUintErrors(t *testing.T) {
 	testCases := map[string]struct {
 		args []string
 	}{
-		"Short no value": {
+		"Single dash, no value": {
 			args: []string{"-n"},
 		},
-		"Long no value": {
+		"Double dash, no value": {
 			args: []string{"--number"},
 		},
-		"Short invalid value": {
+		"Single dash, invalid value": {
 			args: []string{"-n", "xyz"},
 		},
-		"Long invalid value": {
+		"Double dash, invalid value": {
 			args: []string{"--number", "xyz"},
 		},
-		"Long equals no value": {
+		"Double dash, equals no value": {
 			args: []string{"--number="},
 		},
-		"Long equals invalid": {
+		"Double dash, equals invalid": {
 			args: []string{"--number=xyz"},
 		},
-		"Short negative value": {
+		"Single dash, negative value": {
 			args: []string{"-n", "-42"},
 		},
-		"Long negative value": {
+		"Double dash, negative value": {
 			args: []string{"--number=-42"},
 		},
-		"Short float value": {
+		"Single dash, float value": {
 			args: []string{"-n", "3.14"},
 		},
-		"Long float value": {
+		"Double dash, float value": {
 			args: []string{"--number=3.14"},
 		},
-		"Long multiple equals": {
+		"Double dash, multiple equals": {
 			args: []string{"--number=42=13"},
 		},
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/telemachus/opts"
 )
 
-func TestParseShortStringFlag(t *testing.T) {
+func TestParseSingleDashStringOption(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -88,7 +88,7 @@ func TestParseShortStringFlag(t *testing.T) {
 	}
 }
 
-func TestParseStringFlagErrors(t *testing.T) {
+func TestParseStringOptionErrors(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
