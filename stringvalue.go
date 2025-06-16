@@ -10,8 +10,8 @@ func (g *Group) String(s *string, name, defValue string) {
 
 	*s = defValue
 	opt := &Opt{
-		value: &genericValue[string]{
-			target: s,
+		value: &value[string]{
+			ptr:    s,
 			parser: func(str string) (string, error) { return str, nil },
 		},
 		defValue: defValue,

@@ -16,8 +16,8 @@ func (g *Group) Float64(f *float64, name string, defValue float64) {
 
 	*f = defValue
 	opt := &Opt{
-		value: &genericValue[float64]{
-			target: f,
+		value: &value[float64]{
+			ptr:    f,
 			parser: parseFloat64,
 		},
 		defValue: strconv.FormatFloat(defValue, 'g', -1, 64),

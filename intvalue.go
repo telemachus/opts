@@ -15,8 +15,8 @@ func (g *Group) Int(i *int, name string, defValue int) {
 
 	*i = defValue
 	opt := &Opt{
-		value: &genericValue[int]{
-			target: i,
+		value: &value[int]{
+			ptr:    i,
 			parser: parseInt,
 		},
 		defValue: strconv.Itoa(defValue),

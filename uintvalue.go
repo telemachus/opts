@@ -14,8 +14,8 @@ func (g *Group) Uint(u *uint, name string, defValue uint) {
 
 	*u = defValue
 	opt := &Opt{
-		value: &genericValue[uint]{
-			target: u,
+		value: &value[uint]{
+			ptr:    u,
 			parser: parseUint,
 		},
 		defValue: strconv.FormatUint(uint64(defValue), 10),

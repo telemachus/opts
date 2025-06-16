@@ -15,8 +15,8 @@ func (g *Group) Duration(d *time.Duration, name string, defValue time.Duration) 
 
 	*d = defValue
 	opt := &Opt{
-		value: &genericValue[time.Duration]{
-			target: d,
+		value: &value[time.Duration]{
+			ptr:    d,
 			parser: time.ParseDuration,
 		},
 		defValue: defValue.Round(time.Second).String(),

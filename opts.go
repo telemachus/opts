@@ -5,20 +5,39 @@ import (
 	"maps"
 )
 
-// value allows
-type value interface {
-	set(string) error
-}
-
 // Opt encapsulates a single option.
 type Opt struct {
-	value    value
+	value    setter
 	defValue string
 	name     string
 	isBool   bool
 }
 
-// DefValue returns default value of the option as a string.
+// Setter is the interface that all options must satisfy. An option must be able
+// to parse a string as a value and assign that value to a pointer variable of
+// the appropriate type. If the string cannot be parsed as an appropriate
+// value, the setter must return an error.
+type setter interface {
+	set(string) error
+}
+
+type value[T any] struct {
+	ptr    *T
+	parser func(string) (T, error)
+}
+
+func (v *value[T]) set(s string) error {
+	val, err := v.parser(s)
+	if err != nil {
+		return err
+	}
+
+	*v.ptr = val
+
+	return nil
+}
+
+// DefValue returns the default value of the option as a string.
 func (o *Opt) DefValue() string {
 	return o.defValue
 }

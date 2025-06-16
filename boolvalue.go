@@ -14,8 +14,8 @@ func (g *Group) Bool(b *bool, name string) {
 
 	*b = false
 	opt := &Opt{
-		value: &genericValue[bool]{
-			target: b,
+		value: &value[bool]{
+			ptr:    b,
 			parser: parseBool,
 		},
 		defValue: "false",
