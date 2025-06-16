@@ -54,7 +54,7 @@ func TestParseOptions(t *testing.T) {
 	}{}
 
 	g := opts.NewGroup("test-parsing")
-	g.BoolZero(&cfg.verbose, "V")
+	g.Bool(&cfg.verbose, "V")
 	g.String(&cfg.name, "name", "default")
 
 	err := g.Parse(args)

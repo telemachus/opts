@@ -1,23 +1,19 @@
 package opts
 
-type stringValue string
-
-func newStringValue(val string, p *string) *stringValue {
-	*p = val
-	return (*stringValue)(p)
-}
-
-// String creates a new string option with the default value and binds that
-// option to s. String will panic if name is not a valid option name or if name
-// repeats the name of an existing option.
+// String defines a string option with the specified name and default value.
+// The argument s points to a string variable to hold the value of the option.
+// String will panic if name is not valid or repeats an existing option.
 func (g *Group) String(s *string, name, defValue string) {
 	if err := validateName("String", name); err != nil {
 		panic(err)
 	}
 
-	sv := newStringValue(defValue, s)
+	*s = defValue
 	opt := &Opt{
-		value:    sv,
+		value: &value[string]{
+			ptr:    s,
+			parser: func(str string) (string, error) { return str, nil },
+		},
 		defValue: defValue,
 		name:     name,
 		isBool:   false,
@@ -29,14 +25,10 @@ func (g *Group) String(s *string, name, defValue string) {
 	g.opts[name] = opt
 }
 
-// StringZero creates a new string option that defaults to "".
+// StringZero defines a string option with the specified name and a default
+// value of "". The argument s points to a string variable to hold the value of
+// the option. StringZero will panic if name is not valid or repeats an
+// existing option.
 func (g *Group) StringZero(s *string, name string) {
 	g.String(s, name, "")
-}
-
-// Set assigns s to a stringValue. The method always returns a nil error since
-// there is no parsing to fail.
-func (s *stringValue) set(val string) error {
-	*s = stringValue(val)
-	return nil
 }

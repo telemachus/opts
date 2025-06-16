@@ -62,8 +62,8 @@ func TestParseMultipleDifferentOptions(t *testing.T) {
 			var gotS string
 
 			og := opts.NewGroup("test-parsing")
-			og.BoolZero(&gotB, "v")
-			og.BoolZero(&gotB, "verbose")
+			og.Bool(&gotB, "v")
+			og.Bool(&gotB, "verbose")
 			og.Int(&gotI, "n", 0)
 			og.Int(&gotI, "number", 0)
 			og.Float64(&gotF, "x", 0.0)

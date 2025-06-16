@@ -91,7 +91,6 @@ func (g *Group) parseOpt(arg string, args []string) ([]string, error) {
 
 	if eqFound {
 		// TODO: immediately bail out if the opt is a boolean?
-
 		if err := opt.value.set(value); err != nil {
 			// Distinguish no value from a bad value.
 			if value == "" {

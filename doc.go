@@ -12,13 +12,13 @@ conventions in one or more files.
 
 Add options (aka, flags) to the Group by calling type-specific methods on the
 Group. These methods come in two forms: long and short. The long versions take
-three arguments: a pointer of the appropriate type to store the value, a name,
+three arguments: a pointer of the appropriate type to hold the value, a name,
 and a default value. The short versions take only the pointer and name
 arguments since they always default to the zero value for that type. E.g.,
 [*Group.StringZero] defaults to "" while [*Group.IntZero] defaults to 0.
 
 Boolean options are an exception: they always default to false. Thus, there is
-only [*Group.BoolZero] for boolean options.
+only [*Group.Bool] for boolean options.
 
 	cfg := struct {
 		rcfile     string
@@ -33,8 +33,8 @@ only [*Group.BoolZero] for boolean options.
 	og.String(&cfg.convention, "convention", "camel")
 	og.Uint(&cfg.strictness, "strictness", 3)
 	og.UintZero(&cfg.level, "verbosity")
-	og.BoolZero(&cfg.dryRun, "dry-run")
-	og.BoolZero(&cfg.write, "write")
+	og.Bool(&cfg.dryRun, "dry-run")
+	og.Bool(&cfg.write, "write")
 
 [*Group.Parse] should be called after all options are defined. If Parse returns
 without error, then the variables associated with options are ready for use. If
