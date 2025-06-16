@@ -15,7 +15,7 @@ func Example_typical() {
 	og.String(&cfg.rcfile, "rcfile", "caser.ini")
 	og.String(&cfg.convention, "convention", "camel")
 	og.Uint(&cfg.level, "strictness", 3)
-	og.BoolZero(&cfg.dryRun, "dry-run")
-	og.BoolZero(&cfg.write, "write")
+	og.Bool(&cfg.dryRun, "dry-run")
+	og.Bool(&cfg.write, "write")
 	// Output:
 }

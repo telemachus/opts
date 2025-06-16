@@ -43,8 +43,8 @@ func TestParseBool(t *testing.T) {
 
 			var got bool
 			g := opts.NewGroup("test-parsing")
-			g.BoolZero(&got, "v")
-			g.BoolZero(&got, "verbose")
+			g.Bool(&got, "v")
+			g.Bool(&got, "verbose")
 
 			err := g.Parse(tc.args)
 			if err != nil {

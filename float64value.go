@@ -6,7 +6,46 @@ import (
 	"strconv"
 )
 
-type float64Value float64
+// Float64 defines a float64 option with the specified name and default value.
+// The argument f points to a float64 variable to hold the value of the option.
+// Float64 will panic if name is not valid or repeats an existing option.
+func (g *Group) Float64(f *float64, name string, defValue float64) {
+	if err := validateName("Float64", name); err != nil {
+		panic(err)
+	}
+
+	*f = defValue
+	opt := &Opt{
+		value: &genericValue[float64]{
+			target: f,
+			parser: parseFloat64,
+		},
+		defValue: strconv.FormatFloat(defValue, 'g', -1, 64),
+		name:     name,
+		isBool:   false,
+	}
+
+	if err := g.optAlreadySet(name); err != nil {
+		panic(err)
+	}
+	g.opts[name] = opt
+}
+
+// Float64Zero defines a float64 option with the specified name and a default
+// value of 0.0. The argument f points to a float64 variable to hold the value
+// of the option. Float64Zero will panic if name is not valid or repeats an
+// existing option.
+func (g *Group) Float64Zero(f *float64, name string) {
+	g.Float64(f, name, 0.0)
+}
+
+func parseFloat64(s string) (float64, error) {
+	v, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0, numError(err, s)
+	}
+	return v, nil
+}
 
 func numError(err error, s string) error {
 	var ne *strconv.NumError
@@ -23,49 +62,4 @@ func numError(err error, s string) error {
 	}
 
 	return err
-}
-
-func newFloat64Value(val float64, f *float64) *float64Value {
-	*f = val
-	return (*float64Value)(f)
-}
-
-// Float64 creates a new float64 option and binds its default value to f.
-// Float64 will panic if name is not a valid option name or if name repeats the
-// name of an existing option.
-func (g *Group) Float64(f *float64, name string, defValue float64) {
-	if err := validateName("Float64", name); err != nil {
-		panic(err)
-	}
-
-	fv := newFloat64Value(defValue, f)
-	opt := &Opt{
-		value:    fv,
-		defValue: strconv.FormatFloat(defValue, 'g', -1, 64),
-		name:     name,
-		isBool:   false,
-	}
-
-	if err := g.optAlreadySet(name); err != nil {
-		panic(err)
-	}
-	g.opts[name] = opt
-}
-
-// Float64Zero creates a new float64 option that defaults to 0.0.
-func (g *Group) Float64Zero(f *float64, name string) {
-	g.Float64(f, name, 0.0)
-}
-
-// Set assigns s to an float64Value and returns an error if s cannot be parsed
-// as a float64.
-func (f *float64Value) set(s string) error {
-	v, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return numError(err, s)
-	}
-
-	*f = float64Value(v)
-
-	return nil
 }
