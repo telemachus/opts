@@ -5,8 +5,8 @@ import (
 )
 
 // Uint defines a uint option with the specified name and default value. The
-// argument u points to a uint variable to hold the value of the option. Uint
-// will panic if name is not valid or repeats an existing option.
+// argument u points to a uint variable that will store the value of the
+// option. Uint will panic if name is not valid or repeats an existing option.
 func (g *Group) Uint(u *uint, name string, defValue uint) {
 	if err := validateName("Uint", name); err != nil {
 		panic(err)
@@ -15,12 +15,11 @@ func (g *Group) Uint(u *uint, name string, defValue uint) {
 	*u = defValue
 	opt := &Opt{
 		value: &value[uint]{
-			ptr:    u,
-			parser: parseUint,
+			ptr:     u,
+			convert: toUint,
 		},
-		defValue: strconv.FormatUint(uint64(defValue), 10),
-		name:     name,
-		isBool:   false,
+		name:   name,
+		isBool: false,
 	}
 
 	if err := g.optAlreadySet(name); err != nil {
@@ -30,16 +29,17 @@ func (g *Group) Uint(u *uint, name string, defValue uint) {
 }
 
 // UintZero defines a uint option with the specified name and default value.
-// The argument u points to a uint variable to hold the value of the option.
-// UintZero will panic if name is not valid or repeats an existing option.
+// The argument u points to a uint variable that will store the value of the
+// option. UintZero will panic if name is not valid or repeats an existing
+// option.
 func (g *Group) UintZero(u *uint, name string) {
 	g.Uint(u, name, 0)
 }
 
-func parseUint(s string) (uint, error) {
+func toUint(s string) (uint, error) {
 	v, err := strconv.ParseUint(s, 0, strconv.IntSize)
 	if err != nil {
-		return 0, numError(err, s)
+		return 0, numError(err)
 	}
 	return uint(v), nil
 }

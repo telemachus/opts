@@ -77,22 +77,22 @@ func TestParseSingleDashUintOption(t *testing.T) {
 			t.Parallel()
 
 			var got uint
-			g := opts.NewGroup("test-parsing")
-			g.Uint(&got, "n", 0)
-			g.Uint(&got, "number", 0)
+			og := opts.NewGroup("test-parsing")
+			og.Uint(&got, "n", 0)
+			og.Uint(&got, "number", 0)
 
-			err := g.Parse(tc.args)
+			err := og.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("after err := g.Parse(%+v), err == %v; want nil", tc.args, err)
+				t.Fatalf("after err := og.Parse(%v), err == %v; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("after g.Parse(%+v), got = %d; want %d", tc.args, got, tc.want)
+				t.Errorf("after og.Parse(%v), got = %d; want %d", tc.args, got, tc.want)
 			}
 
-			postArgs := g.Args()
+			postArgs := og.Args()
 			if diff := cmp.Diff(tc.postArgs, postArgs); diff != "" {
-				t.Errorf("g.Parse(%+v); (-want +got):\n%s", tc.args, diff)
+				t.Errorf("after og.Parse(%v); (-want +got):\n%s", tc.args, diff)
 			}
 		})
 	}
@@ -144,13 +144,13 @@ func TestParseUintErrors(t *testing.T) {
 			t.Parallel()
 
 			var got uint
-			g := opts.NewGroup("test-parsing")
-			g.Uint(&got, "n", 0)
-			g.Uint(&got, "number", 0)
+			og := opts.NewGroup("test-parsing")
+			og.Uint(&got, "n", 0)
+			og.Uint(&got, "number", 0)
 
-			err := g.Parse(tc.args)
+			err := og.Parse(tc.args)
 			if err == nil {
-				t.Errorf("after g.Parse(%+v), err == nil; want error", tc.args)
+				t.Errorf("after og.Parse(%v), err == nil; want error", tc.args)
 			}
 		})
 	}

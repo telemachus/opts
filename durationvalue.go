@@ -5,8 +5,8 @@ import (
 )
 
 // Duration defines a time.Duration option with the specified name and default
-// value. The argument d points to a time.Duration variable to hold the value
-// of the option. Duration will panic if name is not valid or repeats an
+// value. The argument d points to a time.Duration variable that will store the
+// value of the option. Duration will panic if name is not valid or repeats an
 // existing option.
 func (g *Group) Duration(d *time.Duration, name string, defValue time.Duration) {
 	if err := validateName("Duration", name); err != nil {
@@ -16,12 +16,11 @@ func (g *Group) Duration(d *time.Duration, name string, defValue time.Duration) 
 	*d = defValue
 	opt := &Opt{
 		value: &value[time.Duration]{
-			ptr:    d,
-			parser: time.ParseDuration,
+			ptr:     d,
+			convert: time.ParseDuration,
 		},
-		defValue: defValue.Round(time.Second).String(),
-		name:     name,
-		isBool:   false,
+		name:   name,
+		isBool: false,
 	}
 
 	if err := g.optAlreadySet(name); err != nil {
@@ -31,9 +30,9 @@ func (g *Group) Duration(d *time.Duration, name string, defValue time.Duration) 
 }
 
 // DurationZero defines a time.Duration option with the specified name and
-// a default value of 0. The argument d points to a time.Duration variable to
-// hold the value of the option. DurationZero will panic if name is not valid
-// or repeats an existing option.
+// a default value of 0. The argument d points to a time.Duration variable that
+// will store the value of the option. DurationZero will panic if name is not
+// valid or repeats an existing option.
 func (g *Group) DurationZero(d *time.Duration, name string) {
 	g.Duration(d, name, 0)
 }

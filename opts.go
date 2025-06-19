@@ -1,33 +1,25 @@
 package opts
 
-import (
-	"iter"
-	"maps"
-)
-
 // Opt encapsulates a single option.
 type Opt struct {
-	value    setter
-	defValue string
-	name     string
-	isBool   bool
+	value  setter
+	name   string
+	isBool bool
 }
 
-// Setter is the interface that all options must satisfy. An option must be able
-// to parse a string as a value and assign that value to a pointer variable of
-// the appropriate type. If the string cannot be parsed as an appropriate
-// value, the setter must return an error.
+// Options implement the setter interface, parsing a given string and assigning
+// its value to a pointer or returning an error if parsing fails.
 type setter interface {
 	set(string) error
 }
 
 type value[T any] struct {
-	ptr    *T
-	parser func(string) (T, error)
+	ptr     *T
+	convert func(string) (T, error)
 }
 
 func (v *value[T]) set(s string) error {
-	val, err := v.parser(s)
+	val, err := v.convert(s)
 	if err != nil {
 		return err
 	}
@@ -37,21 +29,11 @@ func (v *value[T]) set(s string) error {
 	return nil
 }
 
-// DefValue returns the default value of the option as a string.
-func (o *Opt) DefValue() string {
-	return o.defValue
-}
-
-// Name returns the command line name associated with the option.
-func (o *Opt) Name() string {
-	return o.name
-}
-
 // Group stores and manages a set of options.
 type Group struct {
 	opts   map[string]*Opt
 	name   string
-	args   []string // arguments remaining after option parsing
+	args   []string
 	parsed bool
 }
 
@@ -66,9 +48,4 @@ func NewGroup(name string) *Group {
 // Name returns the name of the group.
 func (g *Group) Name() string {
 	return g.name
-}
-
-// All iterates over the options in a group.
-func (g *Group) All() iter.Seq[*Opt] {
-	return maps.Values(g.opts)
 }

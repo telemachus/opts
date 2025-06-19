@@ -73,25 +73,25 @@ func TestParseMultipleDifferentOptions(t *testing.T) {
 
 			err := og.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("after err := og.Parse(%+v), err == %v; want nil", tc.args, err)
+				t.Fatalf("after err := og.Parse(%v), err == %v; want nil", tc.args, err)
 			}
 
 			if gotB != tc.wantB {
-				t.Errorf("after og.Parse(%+v), bool = %t; want %t", tc.args, gotB, tc.wantB)
+				t.Errorf("after og.Parse(%v), bool = %t; want %t", tc.args, gotB, tc.wantB)
 			}
 			if gotI != tc.wantI {
-				t.Errorf("after og.Parse(%+v), int = %d; want %d", tc.args, gotI, tc.wantI)
+				t.Errorf("after og.Parse(%v), int = %d; want %d", tc.args, gotI, tc.wantI)
 			}
 			if gotF != tc.wantF {
-				t.Errorf("after og.Parse(%+v), float = %g; want %g", tc.args, gotF, tc.wantF)
+				t.Errorf("after og.Parse(%v), float = %g; want %g", tc.args, gotF, tc.wantF)
 			}
 			if gotS != tc.wantS {
-				t.Errorf("after og.Parse(%+v), string = %q; want %q", tc.args, gotS, tc.wantS)
+				t.Errorf("after og.Parse(%v), string = %q; want %q", tc.args, gotS, tc.wantS)
 			}
 
 			postArgs := og.Args()
 			if diff := cmp.Diff(tc.postArgs, postArgs); diff != "" {
-				t.Errorf("og.Parse(%+v); (-want +got):\n%s", tc.args, diff)
+				t.Errorf("after og.Parse(%v); (-want +got):\n%s", tc.args, diff)
 			}
 		})
 	}

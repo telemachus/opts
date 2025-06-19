@@ -1,13 +1,12 @@
 package opts
 
 import (
-	"fmt"
 	"strconv"
 )
 
 // Int defines an int option with the specified name and value. The argument
-// i points to an int variable to hold the value of the option. Int will panic
-// if name is not valid or repeats an existing option.
+// i points to an int variable that will store the value of the option. Int
+// will panic if name is not valid or repeats an existing option.
 func (g *Group) Int(i *int, name string, defValue int) {
 	if err := validateName("Int", name); err != nil {
 		panic(err)
@@ -16,12 +15,11 @@ func (g *Group) Int(i *int, name string, defValue int) {
 	*i = defValue
 	opt := &Opt{
 		value: &value[int]{
-			ptr:    i,
-			parser: parseInt,
+			ptr:     i,
+			convert: toInt,
 		},
-		defValue: strconv.Itoa(defValue),
-		name:     name,
-		isBool:   false,
+		name:   name,
+		isBool: false,
 	}
 
 	if err := g.optAlreadySet(name); err != nil {
@@ -31,16 +29,18 @@ func (g *Group) Int(i *int, name string, defValue int) {
 }
 
 // IntZero defines an int option with the specified name and a value of 0. The
-// argument i points to an int variable to hold the value of the option.
-// IntZero will panic if name is not valid or repeats an existing option.
+// argument i points to an int variable that will store the value of the
+// option. IntZero will panic if name is not valid or repeats an existing
+// option.
 func (g *Group) IntZero(i *int, name string) {
 	g.Int(i, name, 0)
 }
 
-func parseInt(s string) (int, error) {
+func toInt(s string) (int, error) {
 	v, err := strconv.Atoi(s)
 	if err != nil {
-		return 0, fmt.Errorf("parsing %q: %w", s, err)
+		// The caller will give this error more context.
+		return 0, numError(err)
 	}
 	return v, nil
 }

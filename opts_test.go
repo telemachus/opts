@@ -9,13 +9,13 @@ func TestNewGroup(t *testing.T) {
 	t.Parallel()
 
 	name := "test-opts"
-	g := NewGroup(name)
-	if g == nil {
+	og := NewGroup(name)
+	if og == nil {
 		t.Fatalf("NewGroup(%q) returned nil", name)
 	}
 
-	if g.Name() != name {
-		t.Errorf("g.Name(%q) == %q; want %q", name, g.Name(), name)
+	if og.Name() != name {
+		t.Errorf("og.Name(%q) == %q; want %q", name, og.Name(), name)
 	}
 }
 
@@ -29,6 +29,43 @@ func TestOptRegistrationValid(t *testing.T) {
 
 	if opt := og.opts[name]; opt == nil {
 		t.Errorf("option --%s not registered", name)
+	}
+}
+
+func TestOptRegistrationInvalid(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		name string
+	}{
+		"empty name":         {name: ""},
+		"whitespace":         {name: " hello"},
+		"equal sign":         {name: "hello=world"},
+		"tab":                {name: "hello\tworld"},
+		"newline":            {name: "hello\nworld"},
+		"null byte":          {name: "hello\u0000world"},
+		"null rune":          {name: "hello\x00world"},
+		"initial dash":       {name: "-hello"},
+		"backslash":          {name: `hello\world`},
+		"single quote":       {name: "hello'world"},
+		"double quote":       {name: `hello"world`},
+		"backtick":           {name: "hello`world"},
+		"unicode whitespace": {name: "hello\u00A0world"},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			og := NewGroup("test-optiongroup")
+			defer func() {
+				if r := recover(); r == nil {
+					t.Error("expected panic on invalid name")
+				}
+			}()
+			var got bool
+			og.Bool(&got, tc.name)
+		})
 	}
 }
 

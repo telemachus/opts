@@ -5,8 +5,8 @@ import (
 )
 
 // Bool defines a bool option with the specified name and a value of false. The
-// argument b points to a bool variable to hold the value of the option. Bool
-// will panic if name is not valid or repeats an existing option.
+// argument b points to a bool variable that will store the value of the
+// option. Bool will panic if name is not valid or repeats an existing option.
 func (g *Group) Bool(b *bool, name string) {
 	if err := validateName("Bool", name); err != nil {
 		panic(err)
@@ -15,12 +15,11 @@ func (g *Group) Bool(b *bool, name string) {
 	*b = false
 	opt := &Opt{
 		value: &value[bool]{
-			ptr:    b,
-			parser: parseBool,
+			ptr:     b,
+			convert: toBool,
 		},
-		defValue: "false",
-		name:     name,
-		isBool:   true,
+		name:   name,
+		isBool: true,
 	}
 
 	if err := g.optAlreadySet(name); err != nil {
@@ -29,13 +28,14 @@ func (g *Group) Bool(b *bool, name string) {
 	g.opts[name] = opt
 }
 
-func parseBool(s string) (bool, error) {
+func toBool(s string) (bool, error) {
 	switch s {
 	case "true":
 		return true, nil
 	case "false":
 		return false, nil
 	default:
-		return false, fmt.Errorf("cannot parse %q", s)
+		// Omit "opts: " since the caller will provide context.
+		return false, fmt.Errorf("bool value must be %q or %q", "true", "false")
 	}
 }
