@@ -107,12 +107,12 @@ Here are some of the key ways that this library is opinionated.
   treats, e.g., `-help` and `--help` as if they were identical. (In this way,
   the library follows `flag` in Go's standard library.)
 + No (traditional) short options and no automatic binding of long and short
-  options.  The library does not distinguish between short options (preceded by
-  a single dash, always one letter and, stackable) versus long options (preceded
-  by two dashes, more than one letter, not stackable). Although users can bind
-  two options to one variable, the library does not provide methods that take
-  two options at once and bind them to the same variable. (Again, this is like
-  Go's `flag` library.)
+  options.  The library does not distinguish traditional short options (preceded
+  by a single dash, always one letter and, stackable) from traditional long
+  options (preceded by two dashes, more than one letter, not stackable).
+  Although users can bind two options to one variable, the library does not
+  provide methods that take two options at once and bind them to the same
+  variable. (Again, this is like Go's `flag` library.)
 + No automatic usage. Although most option parsing libraries provide ways to
   generate formatted help messages, `opts` does not. It's more work to write
   help messages by hand, but I think the results can be worth it.
