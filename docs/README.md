@@ -1,3 +1,5 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/telemachus/opts.svg)](https://pkg.go.dev/github.com/telemachus/opts)
+
 # opts: a small and opinionated argument parser for Go
 
 ## Basics
