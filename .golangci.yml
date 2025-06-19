@@ -88,8 +88,4 @@ run:
   issues-exit-code: 1
   timeout: 30m
   tests: true
-  allow-parallel-runners: false
-
-issues:
-  exclude-dirs:
-    - internal
+  allow-parallel-runners: true
