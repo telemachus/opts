@@ -29,8 +29,7 @@ func (g *Group) Float64(f *float64, name string, defValue float64) {
 	g.opts[name] = opt
 }
 
-// Float64Zero is like Float64 but defaults to the zero value for float64,
-// 0.0.
+// Float64Zero is like Float64 but with a default value of 0.0.
 func (g *Group) Float64Zero(f *float64, name string) {
 	g.Float64(f, name, 0.0)
 }

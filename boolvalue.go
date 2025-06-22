@@ -4,9 +4,9 @@ import (
 	"fmt"
 )
 
-// Bool defines a bool option with the specified name and a value of false. The
-// argument b points to a bool variable that will store the value of the
-// option. Bool will panic if name is not valid or repeats an existing option.
+// Bool defines a bool option with the specified name and a default value of
+// false. The argument b points to a bool variable that will store the value.
+// Bool will panic if name is not valid or repeats an existing option.
 func (g *Group) Bool(b *bool, name string) {
 	if err := validateName("Bool", name); err != nil {
 		panic(err)

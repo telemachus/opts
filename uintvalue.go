@@ -28,7 +28,7 @@ func (g *Group) Uint(u *uint, name string, defValue uint) {
 	g.opts[name] = opt
 }
 
-// UintZero is like Uint but defaults to the zero value for uint, 0.
+// UintZero is like Uint but with a default value of 0.
 func (g *Group) UintZero(u *uint, name string) {
 	g.Uint(u, name, 0)
 }

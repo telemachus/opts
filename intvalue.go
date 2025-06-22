@@ -28,7 +28,7 @@ func (g *Group) Int(i *int, name string, defValue int) {
 	g.opts[name] = opt
 }
 
-// IntZero is like Int but defaults to the zero value for int, 0.
+// IntZero is like Int but with a default value of 0.
 func (g *Group) IntZero(i *int, name string) {
 	g.Int(i, name, 0)
 }

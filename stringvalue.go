@@ -25,7 +25,7 @@ func (g *Group) String(s *string, name, defValue string) {
 	g.opts[name] = opt
 }
 
-// StringZero is like String but defaults to the zero value for string, "".
+// StringZero is like String but with a default value of "".
 func (g *Group) StringZero(s *string, name string) {
 	g.String(s, name, "")
 }
