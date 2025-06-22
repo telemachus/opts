@@ -86,6 +86,6 @@ linters:
 run:
   concurrency: 8
   issues-exit-code: 1
-  timeout: 30m
+  timeout: 3m
   tests: true
-  allow-parallel-runners: true
+  allow-parallel-runners: false
