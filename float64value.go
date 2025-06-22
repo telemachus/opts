@@ -29,10 +29,8 @@ func (g *Group) Float64(f *float64, name string, defValue float64) {
 	g.opts[name] = opt
 }
 
-// Float64Zero defines a float64 option with the specified name and a default
-// value of 0.0. The argument f points to a float64 variable that will store
-// the value of the option. Float64Zero will panic if name is not valid or
-// repeats an existing option.
+// Float64Zero is like Float64 but defaults to the zero value for float64,
+// 0.0.
 func (g *Group) Float64Zero(f *float64, name string) {
 	g.Float64(f, name, 0.0)
 }

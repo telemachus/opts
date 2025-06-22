@@ -25,10 +25,7 @@ func (g *Group) String(s *string, name, defValue string) {
 	g.opts[name] = opt
 }
 
-// StringZero defines a string option with the specified name and a default
-// value of "". The argument s points to a string variable that will store the
-// value of the option. StringZero will panic if name is not valid or repeats
-// an existing option.
+// StringZero is like String but defaults to the zero value for string, "".
 func (g *Group) StringZero(s *string, name string) {
 	g.String(s, name, "")
 }

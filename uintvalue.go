@@ -28,10 +28,7 @@ func (g *Group) Uint(u *uint, name string, defValue uint) {
 	g.opts[name] = opt
 }
 
-// UintZero defines a uint option with the specified name and default value.
-// The argument u points to a uint variable that will store the value of the
-// option. UintZero will panic if name is not valid or repeats an existing
-// option.
+// UintZero is like Uint but defaults to the zero value for uint, 0.
 func (g *Group) UintZero(u *uint, name string) {
 	g.Uint(u, name, 0)
 }

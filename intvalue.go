@@ -28,10 +28,7 @@ func (g *Group) Int(i *int, name string, defValue int) {
 	g.opts[name] = opt
 }
 
-// IntZero defines an int option with the specified name and a value of 0. The
-// argument i points to an int variable that will store the value of the
-// option. IntZero will panic if name is not valid or repeats an existing
-// option.
+// IntZero is like Int but defaults to the zero value for int, 0.
 func (g *Group) IntZero(i *int, name string) {
 	g.Int(i, name, 0)
 }

@@ -29,10 +29,8 @@ func (g *Group) Duration(d *time.Duration, name string, defValue time.Duration) 
 	g.opts[name] = opt
 }
 
-// DurationZero defines a time.Duration option with the specified name and
-// a default value of 0. The argument d points to a time.Duration variable that
-// will store the value of the option. DurationZero will panic if name is not
-// valid or repeats an existing option.
+// DurationZero is like Duration but defaults to the zero value for
+// time.Duration, 0.
 func (g *Group) DurationZero(d *time.Duration, name string) {
 	g.Duration(d, name, 0)
 }
