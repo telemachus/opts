@@ -7,7 +7,9 @@ import (
 // Duration defines a time.Duration option with the specified name and default
 // value. The argument d points to a time.Duration variable that will store the
 // value of the option. Duration will panic if name is not valid or repeats an
-// existing option.
+// existing option. On the command line, users must pass a string in Go's
+// time.Duration format (e.g., "500ms" or "4h15m18s"). See [time.ParseDuration]
+// for details.
 func (g *Group) Duration(d *time.Duration, name string, defValue time.Duration) {
 	if err := validateName("Duration", name); err != nil {
 		panic(err)

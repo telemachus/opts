@@ -91,5 +91,17 @@ in scripts.
 	og.Bool(&cfg.helpWanted, "h")
 	og.Bool(&cfg.versionWanted, "version")
 	og.Bool(&cfg.versionWanted, "V")
+
+# Valid Command Line Strings
+
+For most types, it will be clear what a valid string will look like. If an
+opt is a string, int, or float, users will pass the obvious thing. E.g.,
+"something.toml", "0", or "12.3".
+
+But it may not be obvious what [Group.Date] and [Group.Duration] consider valid
+or invalid strings. [Group.Date] opts must be in in RFC 3339 full-date format.
+E.g., "2025-12-31" or "2024-02-29". See [cloud.google.com/go/civil.ParseDate]
+for details. [Group.Duration] opts must be valid [time.Duration] string. E.g.,
+"10ms", "3m2s", or "1h35m9s1ms".  See [time.ParseDuration] for details.
 */
 package opts
