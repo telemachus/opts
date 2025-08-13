@@ -23,7 +23,7 @@ Option definition methods will panic if a name is invalid.
 After all options are defined, a call to `*Group.Parse` will attempt to assign
 values to options. Parse takes a slice of strings as an argument. This slice
 should contain everything on the command line other than the name of the
-program. In other words, users should usually pass os.Args[1:], or its
+program. In other words, users should usually pass `os.Args[1:]`, or its
 equivalent, to Parse.
 
 Parse will return an error if a user passes an unknown option, if an option is
@@ -61,7 +61,8 @@ if err := og.Parse(os.Args[1:]); err != nil {
 	// Handle the error.
 }
 
-// No error? The values in cfg are safe to use.
+// No error? The values in cfg are safe to use and og.Args() returns everything
+// left of os.Args[1:] after parsing stopped.
 ```
 
 ## Command Line Syntax
@@ -107,7 +108,7 @@ Here are some of the key ways that this library is opinionated.
   treats, e.g., `-help` and `--help` as if they were identical. (In this way,
   the library follows `flag` in Go's standard library.)
 + No (traditional) short options and no automatic binding of long and short
-  options.  The library does not distinguish traditional short options (preceded
+  options. The library does not distinguish traditional short options (preceded
   by a single dash, always one letter and, stackable) from traditional long
   options (preceded by two dashes, more than one letter, not stackable).
   Although users can bind two options to one variable, the library does not
@@ -116,9 +117,11 @@ Here are some of the key ways that this library is opinionated.
 + No automatic usage. Although most option parsing libraries provide ways to
   generate formatted help messages, `opts` does not. It's more work to write
   help messages by hand, but I think the results can be worth it.
-+ Booleans. Booleans always default to false, and they never accept arguments.
-  They function only as switches: if a boolean option appears on the command
-  line, it's value becomes true.
-+ Types are limited and not extendable. The library provides options for the
-  following types: boolean, duration, float64, int, string, and uint. Users
-  cannot extend the types.
++ Booleans always default to false, and they never accept arguments. They
+  function only as switches: if a boolean option appears on the command line,
+  its value becomes true.
++ Types are limited. The library provides options for the following types:
+  boolean, date (using [civil.Date][civil]), duration, float64, int, string, and
+  uint. Users cannot extend the types.
+
+  [civil]: https://pkg.go.dev/cloud.google.com/go/civil#Date

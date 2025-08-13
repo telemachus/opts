@@ -3,6 +3,8 @@ package opts
 import (
 	"testing"
 	"time"
+
+	"cloud.google.com/go/civil"
 )
 
 func TestNewGroup(t *testing.T) {
@@ -84,6 +86,16 @@ func TestDuplicateOptRegistration(t *testing.T) {
 			second: func(og *Group) {
 				var b bool
 				og.Bool(&b, "verbose")
+			},
+		},
+		"duplicate date": {
+			first: func(og *Group) {
+				var d civil.Date
+				og.Date(&d, "birthday", civil.Date{Year: 1972, Month: 6, Day: 23})
+			},
+			second: func(og *Group) {
+				var d civil.Date
+				og.Date(&d, "birthday", civil.Date{Year: 1972, Month: 6, Day: 23})
 			},
 		},
 		"duplicate duration": {
