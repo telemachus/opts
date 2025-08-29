@@ -11,44 +11,52 @@ func TestParseInt(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		args     []string
-		postArgs []string
-		want     int
+		parseFunc func(*opts.Group, []string) ([]string, error)
+		args      []string
+		postArgs  []string
+		want      int
 	}{
 		"Basic value; single dash": {
-			args:     []string{"-n", "42"},
-			postArgs: []string{},
-			want:     42,
+			args:      []string{"-n", "42"},
+			postArgs:  []string{},
+			want:      42,
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Negative value; single dash": {
-			args:     []string{"-n", "-42"},
-			postArgs: []string{},
-			want:     -42,
+			args:      []string{"-n", "-42"},
+			postArgs:  []string{},
+			want:      -42,
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Args after value; single dash": {
-			args:     []string{"-n", "42", "foo", "bar"},
-			postArgs: []string{"foo", "bar"},
-			want:     42,
+			args:      []string{"-n", "42", "foo", "bar"},
+			postArgs:  []string{"foo", "bar"},
+			want:      42,
+			parseFunc: (*opts.Group).ParseKnown,
 		},
 		"Space separated; double dash": {
-			args:     []string{"--number", "42"},
-			postArgs: []string{},
-			want:     42,
+			args:      []string{"--number", "42"},
+			postArgs:  []string{},
+			want:      42,
+			parseFunc: (*opts.Group).Parse,
 		},
 		"With equals; double dash": {
-			args:     []string{"--number=42"},
-			postArgs: []string{},
-			want:     42,
+			args:      []string{"--number=42"},
+			postArgs:  []string{},
+			want:      42,
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Negative value; double dash": {
-			args:     []string{"--number", "-42"},
-			postArgs: []string{},
-			want:     -42,
+			args:      []string{"--number", "-42"},
+			postArgs:  []string{},
+			want:      -42,
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Args after value; double dash": {
-			args:     []string{"--number", "42", "foo", "bar"},
-			postArgs: []string{"foo", "bar"},
-			want:     42,
+			args:      []string{"--number", "42", "foo", "bar"},
+			postArgs:  []string{"foo", "bar"},
+			want:      42,
+			parseFunc: (*opts.Group).ParseKnown,
 		},
 	}
 
@@ -61,7 +69,7 @@ func TestParseInt(t *testing.T) {
 			og.Int(&got, "n", 0)
 			og.Int(&got, "number", 0)
 
-			err := og.Parse(tc.args)
+			postArgs, err := tc.parseFunc(og, tc.args)
 			if err != nil {
 				t.Fatalf("after err := og.Parse(%v), err == %v; want nil", tc.args, err)
 			}
@@ -70,7 +78,6 @@ func TestParseInt(t *testing.T) {
 				t.Errorf("after og.Parse(%v), got = %d; want %d", tc.args, got, tc.want)
 			}
 
-			postArgs := og.Args()
 			if diff := cmp.Diff(tc.postArgs, postArgs); diff != "" {
 				t.Errorf("after og.Parse(%v); (-want +got):\n%s", tc.args, diff)
 			}
@@ -122,7 +129,7 @@ func TestParseIntErrors(t *testing.T) {
 			og.Int(&got, "n", 0)
 			og.Int(&got, "number", 0)
 
-			err := og.Parse(tc.args)
+			_, err := og.Parse(tc.args)
 			if err == nil {
 				t.Errorf("after og.Parse(%v), err == nil; want error", tc.args)
 			}

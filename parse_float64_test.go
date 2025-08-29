@@ -11,64 +11,76 @@ func TestParseFloat64(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		args     []string
-		postArgs []string
-		want     float64
+		parseFunc func(*opts.Group, []string) ([]string, error)
+		args      []string
+		postArgs  []string
+		want      float64
 	}{
 		"Integer value; single dash": {
-			args:     []string{"-x", "42"},
-			postArgs: []string{},
-			want:     42.0,
+			args:      []string{"-x", "42"},
+			postArgs:  []string{},
+			want:      42.0,
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Decimal value; single dash": {
-			args:     []string{"-x", "3.14"},
-			postArgs: []string{},
-			want:     3.14,
+			args:      []string{"-x", "3.14"},
+			postArgs:  []string{},
+			want:      3.14,
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Scientific notation; single dash": {
-			args:     []string{"-x", "1e-2"},
-			postArgs: []string{},
-			want:     0.01,
+			args:      []string{"-x", "1e-2"},
+			postArgs:  []string{},
+			want:      0.01,
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Negative value; single dash": {
-			args:     []string{"-x", "-3.14"},
-			postArgs: []string{},
-			want:     -3.14,
+			args:      []string{"-x", "-3.14"},
+			postArgs:  []string{},
+			want:      -3.14,
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Args after value; single dash": {
-			args:     []string{"-x", "3.14", "foo", "bar"},
-			postArgs: []string{"foo", "bar"},
-			want:     3.14,
+			args:      []string{"-x", "3.14", "foo", "bar"},
+			postArgs:  []string{"foo", "bar"},
+			want:      3.14,
+			parseFunc: (*opts.Group).ParseKnown,
 		},
 		"Space separated decimal; double dash": {
-			args:     []string{"--value", "3.14"},
-			postArgs: []string{},
-			want:     3.14,
+			args:      []string{"--value", "3.14"},
+			postArgs:  []string{},
+			want:      3.14,
+			parseFunc: (*opts.Group).Parse,
 		},
 		"With equals decimal; double dash": {
-			args:     []string{"--value=3.14"},
-			postArgs: []string{},
-			want:     3.14,
+			args:      []string{"--value=3.14"},
+			postArgs:  []string{},
+			want:      3.14,
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Scientific notation; double dash": {
-			args:     []string{"--value=1e-2"},
-			postArgs: []string{},
-			want:     0.01,
+			args:      []string{"--value=1e-2"},
+			postArgs:  []string{},
+			want:      0.01,
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Integer value; double dash": {
-			args:     []string{"--value", "42"},
-			postArgs: []string{},
-			want:     42.0,
+			args:      []string{"--value", "42"},
+			postArgs:  []string{},
+			want:      42.0,
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Negative value; double dash": {
-			args:     []string{"--value", "-3.14"},
-			postArgs: []string{},
-			want:     -3.14,
+			args:      []string{"--value", "-3.14"},
+			postArgs:  []string{},
+			want:      -3.14,
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Args after value; double dash": {
-			args:     []string{"--value", "3.14", "foo", "bar"},
-			postArgs: []string{"foo", "bar"},
-			want:     3.14,
+			args:      []string{"--value", "3.14", "foo", "bar"},
+			postArgs:  []string{"foo", "bar"},
+			want:      3.14,
+			parseFunc: (*opts.Group).ParseKnown,
 		},
 	}
 
@@ -81,7 +93,7 @@ func TestParseFloat64(t *testing.T) {
 			og.Float64(&got, "x", 0.0)
 			og.Float64(&got, "value", 0.0)
 
-			err := og.Parse(tc.args)
+			postArgs, err := tc.parseFunc(og, tc.args)
 			if err != nil {
 				t.Fatalf("after err := og.Parse(%v), err == %v; want nil", tc.args, err)
 			}
@@ -90,7 +102,6 @@ func TestParseFloat64(t *testing.T) {
 				t.Errorf("after og.Parse(%v), got = %g; want %g", tc.args, got, tc.want)
 			}
 
-			postArgs := og.Args()
 			if diff := cmp.Diff(tc.postArgs, postArgs); diff != "" {
 				t.Errorf("after og.Parse(%v); (-want +got):\n%s", tc.args, diff)
 			}
@@ -139,7 +150,7 @@ func TestParseFloat64Errors(t *testing.T) {
 			og.Float64(&got, "x", 0.0)
 			og.Float64(&got, "value", 0.0)
 
-			err := og.Parse(tc.args)
+			_, err := og.Parse(tc.args)
 			if err == nil {
 				t.Errorf("after og.Parse(%v), err == nil; want error", tc.args)
 			}

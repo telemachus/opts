@@ -13,7 +13,7 @@ func (g *Group) Int(i *int, name string, defValue int) {
 	}
 
 	*i = defValue
-	opt := &Opt{
+	opt := &opt{
 		value: &value[int]{
 			ptr:     i,
 			convert: toInt,

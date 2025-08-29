@@ -16,7 +16,7 @@ func (g *Group) Date(d *civil.Date, name string, defValue civil.Date) {
 	}
 
 	*d = defValue
-	opt := &Opt{
+	opt := &opt{
 		value: &value[civil.Date]{
 			ptr:     d,
 			convert: civil.ParseDate,

@@ -12,54 +12,64 @@ func TestParseSingleDashStringOption(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		want     string
-		args     []string
-		postArgs []string
+		parseFunc func(*opts.Group, []string) ([]string, error)
+		want      string
+		args      []string
+		postArgs  []string
 	}{
 		"Basic value; single dash": {
-			args:     []string{"-file", "test.txt"},
-			postArgs: []string{},
-			want:     "test.txt",
+			args:      []string{"-file", "test.txt"},
+			postArgs:  []string{},
+			want:      "test.txt",
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Value with spaces; single dash": {
-			args:     []string{"-file", "test file.txt"},
-			postArgs: []string{},
-			want:     "test file.txt",
+			args:      []string{"-file", "test file.txt"},
+			postArgs:  []string{},
+			want:      "test file.txt",
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Empty string; single dash": {
-			args:     []string{"-file", ""},
-			postArgs: []string{},
-			want:     "",
+			args:      []string{"-file", ""},
+			postArgs:  []string{},
+			want:      "",
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Args after value; single dash": {
-			args:     []string{"-file", "test.txt", "foo", "bar"},
-			postArgs: []string{"foo", "bar"},
-			want:     "test.txt",
+			args:      []string{"-file", "test.txt", "foo", "bar"},
+			postArgs:  []string{"foo", "bar"},
+			want:      "test.txt",
+			parseFunc: (*opts.Group).ParseKnown,
 		},
 		"Space separated; double dash": {
-			args:     []string{"--file", "test.txt"},
-			postArgs: []string{},
-			want:     "test.txt",
+			args:      []string{"--file", "test.txt"},
+			postArgs:  []string{},
+			want:      "test.txt",
+			parseFunc: (*opts.Group).Parse,
 		},
 		"With equals; double dash": {
-			args:     []string{"--file=test.txt"},
-			postArgs: []string{},
-			want:     "test.txt",
+			args:      []string{"--file=test.txt"},
+			postArgs:  []string{},
+			want:      "test.txt",
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Value with spaces; double dash": {
-			args:     []string{"--file", "test file.txt"},
-			postArgs: []string{},
-			want:     "test file.txt",
+			args:      []string{"--file", "test file.txt"},
+			postArgs:  []string{},
+			want:      "test file.txt",
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Empty string; double dash": {
-			args:     []string{"--file", ""},
-			postArgs: []string{},
-			want:     "",
+			args:      []string{"--file", ""},
+			postArgs:  []string{},
+			want:      "",
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Args after value; double dash": {
-			args:     []string{"--file", "test.txt", "foo", "bar"},
-			postArgs: []string{"foo", "bar"},
-			want:     "test.txt",
+			args:      []string{"--file", "test.txt", "foo", "bar"},
+			postArgs:  []string{"foo", "bar"},
+			want:      "test.txt",
+			parseFunc: (*opts.Group).ParseKnown,
 		},
 	}
 
@@ -71,7 +81,7 @@ func TestParseSingleDashStringOption(t *testing.T) {
 			og := opts.NewGroup("test-parsing")
 			og.String(&got, "file", "whatever")
 
-			err := og.Parse(tc.args)
+			postArgs, err := tc.parseFunc(og, tc.args)
 			if err != nil {
 				t.Fatalf("after err := og.Parse(%v), err == %v; want nil", tc.args, err)
 			}
@@ -80,7 +90,6 @@ func TestParseSingleDashStringOption(t *testing.T) {
 				t.Errorf("after og.Parse(%v), got = %q; want %q", tc.args, got, tc.want)
 			}
 
-			postArgs := og.Args()
 			if diff := cmp.Diff(tc.postArgs, postArgs); diff != "" {
 				t.Errorf("after og.Parse(%v); (-want +got):\n%s", tc.args, diff)
 			}
@@ -119,7 +128,7 @@ func TestParseStringOptionErrors(t *testing.T) {
 			og := opts.NewGroup("test-parsing")
 			og.String(&got, "file", "whatever")
 
-			err := og.Parse(tc.args)
+			_, err := og.Parse(tc.args)
 			if err == nil {
 				t.Errorf("after og.Parse(%v), err == nil; want error", tc.args)
 			}

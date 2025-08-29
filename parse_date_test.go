@@ -12,59 +12,70 @@ func TestParseDate(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		args     []string
-		postArgs []string
-		want     civil.Date
+		parseFunc func(*opts.Group, []string) ([]string, error)
+		args      []string
+		postArgs  []string
+		want      civil.Date
 	}{
 		"Basic date; single dash": {
-			args:     []string{"-d", "2025-01-15"},
-			postArgs: []string{},
-			want:     civil.Date{Year: 2025, Month: 1, Day: 15},
+			args:      []string{"-d", "2025-01-15"},
+			postArgs:  []string{},
+			want:      civil.Date{Year: 2025, Month: 1, Day: 15},
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Basic date; double dash": {
-			args:     []string{"--date", "2025-01-15"},
-			postArgs: []string{},
-			want:     civil.Date{Year: 2025, Month: 1, Day: 15},
+			args:      []string{"--date", "2025-01-15"},
+			postArgs:  []string{},
+			want:      civil.Date{Year: 2025, Month: 1, Day: 15},
+			parseFunc: (*opts.Group).Parse,
 		},
 		"With equals; double dash": {
-			args:     []string{"--date=2025-01-15"},
-			postArgs: []string{},
-			want:     civil.Date{Year: 2025, Month: 1, Day: 15},
+			args:      []string{"--date=2025-01-15"},
+			postArgs:  []string{},
+			want:      civil.Date{Year: 2025, Month: 1, Day: 15},
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Leap year date; single dash": {
-			args:     []string{"-d", "2024-02-29"},
-			postArgs: []string{},
-			want:     civil.Date{Year: 2024, Month: 2, Day: 29},
+			args:      []string{"-d", "2024-02-29"},
+			postArgs:  []string{},
+			want:      civil.Date{Year: 2024, Month: 2, Day: 29},
+			parseFunc: (*opts.Group).Parse,
 		},
 		"End of year; double dash": {
-			args:     []string{"--date", "2025-12-31"},
-			postArgs: []string{},
-			want:     civil.Date{Year: 2025, Month: 12, Day: 31},
+			args:      []string{"--date", "2025-12-31"},
+			postArgs:  []string{},
+			want:      civil.Date{Year: 2025, Month: 12, Day: 31},
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Beginning of year; double dash": {
-			args:     []string{"--date=2025-01-01"},
-			postArgs: []string{},
-			want:     civil.Date{Year: 2025, Month: 1, Day: 1},
+			args:      []string{"--date=2025-01-01"},
+			postArgs:  []string{},
+			want:      civil.Date{Year: 2025, Month: 1, Day: 1},
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Args after value; single dash": {
-			args:     []string{"-d", "2025-06-15", "foo", "bar"},
-			postArgs: []string{"foo", "bar"},
-			want:     civil.Date{Year: 2025, Month: 6, Day: 15},
+			args:      []string{"-d", "2025-06-15", "foo", "bar"},
+			postArgs:  []string{"foo", "bar"},
+			want:      civil.Date{Year: 2025, Month: 6, Day: 15},
+			parseFunc: (*opts.Group).ParseKnown,
 		},
 		"Args after value; double dash": {
-			args:     []string{"--date", "2025-06-15", "foo", "bar"},
-			postArgs: []string{"foo", "bar"},
-			want:     civil.Date{Year: 2025, Month: 6, Day: 15},
+			args:      []string{"--date", "2025-06-15", "foo", "bar"},
+			postArgs:  []string{"foo", "bar"},
+			want:      civil.Date{Year: 2025, Month: 6, Day: 15},
+			parseFunc: (*opts.Group).ParseKnown,
 		},
 		"Historical date": {
-			args:     []string{"--date", "1596-03-31"},
-			postArgs: []string{},
-			want:     civil.Date{Year: 1596, Month: 3, Day: 31},
+			args:      []string{"--date", "1596-03-31"},
+			postArgs:  []string{},
+			want:      civil.Date{Year: 1596, Month: 3, Day: 31},
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Future date": {
-			args:     []string{"--date=2099-12-25"},
-			postArgs: []string{},
-			want:     civil.Date{Year: 2099, Month: 12, Day: 25},
+			args:      []string{"--date=2099-12-25"},
+			postArgs:  []string{},
+			want:      civil.Date{Year: 2099, Month: 12, Day: 25},
+			parseFunc: (*opts.Group).Parse,
 		},
 	}
 
@@ -77,7 +88,7 @@ func TestParseDate(t *testing.T) {
 			og.Date(&got, "d", civil.Date{})
 			og.Date(&got, "date", civil.Date{})
 
-			err := og.Parse(tc.args)
+			remaining, err := tc.parseFunc(og, tc.args)
 			if err != nil {
 				t.Fatalf("after err := og.Parse(%v), err == %v; want nil", tc.args, err)
 			}
@@ -86,8 +97,7 @@ func TestParseDate(t *testing.T) {
 				t.Errorf("after og.Parse(%v), got = %v; want %v", tc.args, got, tc.want)
 			}
 
-			postArgs := og.Args()
-			if diff := cmp.Diff(tc.postArgs, postArgs); diff != "" {
+			if diff := cmp.Diff(tc.postArgs, remaining); diff != "" {
 				t.Errorf("after og.Parse(%v); (-want +got):\n%s", tc.args, diff)
 			}
 		})
@@ -168,7 +178,7 @@ func TestParseDateErrors(t *testing.T) {
 			og.Date(&got, "d", civil.Date{})
 			og.Date(&got, "date", civil.Date{})
 
-			err := og.Parse(tc.args)
+			_, err := og.Parse(tc.args)
 			if err == nil {
 				t.Errorf("after og.Parse(%v), err == nil; want error", tc.args)
 			}

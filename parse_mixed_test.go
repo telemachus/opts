@@ -11,44 +11,49 @@ func TestParseMultipleDifferentOptions(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		wantS    string
-		args     []string
-		postArgs []string
-		wantI    int
-		wantF    float64
-		wantB    bool
+		parseFunc func(*opts.Group, []string) ([]string, error)
+		wantS     string
+		args      []string
+		postArgs  []string
+		wantI     int
+		wantF     float64
+		wantB     bool
 	}{
 		"Mixed single dash options": {
-			args:     []string{"-v", "-n", "42", "-x", "3.14", "-f", "test.txt"},
-			postArgs: []string{},
-			wantB:    true,
-			wantI:    42,
-			wantF:    3.14,
-			wantS:    "test.txt",
+			args:      []string{"-v", "-n", "42", "-x", "3.14", "-f", "test.txt"},
+			postArgs:  []string{},
+			wantB:     true,
+			wantI:     42,
+			wantF:     3.14,
+			wantS:     "test.txt",
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Mixed double dash options": {
-			args:     []string{"--verbose", "--number", "42", "--value", "3.14", "--file", "test.txt"},
-			postArgs: []string{},
-			wantB:    true,
-			wantI:    42,
-			wantF:    3.14,
-			wantS:    "test.txt",
+			args:      []string{"--verbose", "--number", "42", "--value", "3.14", "--file", "test.txt"},
+			postArgs:  []string{},
+			wantB:     true,
+			wantI:     42,
+			wantF:     3.14,
+			wantS:     "test.txt",
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Mixed single and double dash options": {
-			args:     []string{"-v", "--number", "42", "-x", "3.14", "--file", "test.txt"},
-			postArgs: []string{},
-			wantB:    true,
-			wantI:    42,
-			wantF:    3.14,
-			wantS:    "test.txt",
+			args:      []string{"-v", "--number", "42", "-x", "3.14", "--file", "test.txt"},
+			postArgs:  []string{},
+			wantB:     true,
+			wantI:     42,
+			wantF:     3.14,
+			wantS:     "test.txt",
+			parseFunc: (*opts.Group).Parse,
 		},
 		"Mixed single and double dash options with remaining args": {
-			args:     []string{"-v", "-n=42", "--value=3.14", "-f", "test.txt", "foo", "bar"},
-			postArgs: []string{"foo", "bar"},
-			wantB:    true,
-			wantI:    42,
-			wantF:    3.14,
-			wantS:    "test.txt",
+			args:      []string{"-v", "-n=42", "--value=3.14", "-f", "test.txt", "foo", "bar"},
+			postArgs:  []string{"foo", "bar"},
+			wantB:     true,
+			wantI:     42,
+			wantF:     3.14,
+			wantS:     "test.txt",
+			parseFunc: (*opts.Group).ParseKnown,
 		},
 	}
 
@@ -71,7 +76,7 @@ func TestParseMultipleDifferentOptions(t *testing.T) {
 			og.String(&gotS, "f", "")
 			og.String(&gotS, "file", "")
 
-			err := og.Parse(tc.args)
+			postArgs, err := tc.parseFunc(og, tc.args)
 			if err != nil {
 				t.Fatalf("after err := og.Parse(%v), err == %v; want nil", tc.args, err)
 			}
@@ -89,7 +94,6 @@ func TestParseMultipleDifferentOptions(t *testing.T) {
 				t.Errorf("after og.Parse(%v), string = %q; want %q", tc.args, gotS, tc.wantS)
 			}
 
-			postArgs := og.Args()
 			if diff := cmp.Diff(tc.postArgs, postArgs); diff != "" {
 				t.Errorf("after og.Parse(%v); (-want +got):\n%s", tc.args, diff)
 			}

@@ -1,7 +1,7 @@
 package opts
 
-// Opt encapsulates a single option.
-type Opt struct {
+// opt encapsulates a single option.
+type opt struct {
 	value  setter
 	name   string
 	isBool bool
@@ -31,7 +31,7 @@ func (v *value[T]) set(s string) error {
 
 // Group stores and manages a set of options.
 type Group struct {
-	opts   map[string]*Opt
+	opts   map[string]*opt
 	name   string
 	args   []string
 	parsed bool
@@ -41,7 +41,7 @@ type Group struct {
 func NewGroup(name string) *Group {
 	return &Group{
 		name: name,
-		opts: make(map[string]*Opt, 10),
+		opts: make(map[string]*opt, 10),
 	}
 }
 
