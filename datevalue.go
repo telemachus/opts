@@ -31,7 +31,8 @@ func (g *Group) Date(d *civil.Date, name string, defValue civil.Date) {
 	g.opts[name] = opt
 }
 
-// DateZero is like Date but with a zero default value.
+// DateZero is like Date but it defaults to a zero value. NB: the zero value
+// for civil.Date is 0000-00-00, which most programs should not use as is.
 func (g *Group) DateZero(d *civil.Date, name string) {
 	g.Date(d, name, civil.Date{})
 }
