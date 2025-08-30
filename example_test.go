@@ -6,8 +6,6 @@ import (
 )
 
 func Example_typical() {
-	// This example demonstrates how to create an options group and define
-	// options for it.
 	cfg := struct {
 		rcfile     string
 		convention string

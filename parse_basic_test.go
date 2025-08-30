@@ -25,11 +25,11 @@ func TestParseStrictNoOptions(t *testing.T) {
 
 			remaining, err := og.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("after remaining, err := og.Parse(%v), err == %v; want nil", tc.args, err)
+				t.Fatalf("og.Parse(%v) returns err == %v; want nil", tc.args, err)
 			}
 
 			if len(remaining) != 0 {
-				t.Errorf("after og.Parse(%v), remaining = %v; want empty slice", tc.args, remaining)
+				t.Errorf("og.Parse(%v) returns remaining = %v; want empty slice", tc.args, remaining)
 			}
 		})
 	}
@@ -60,15 +60,15 @@ func TestParseStrictWithRemainingArgs(t *testing.T) {
 
 			remaining, err := og.Parse(tc.args)
 			if err == nil {
-				t.Fatalf("after remaining, err := og.Parse(%v), err == nil; want ErrUnexpectedArgs", tc.args)
+				t.Fatalf("og.Parse(%v) returns err == nil; want ErrUnexpectedArgs", tc.args)
 			}
 
 			if !errors.Is(err, opts.ErrUnexpectedArgs) {
-				t.Errorf("after og.Parse(%v), err = %v; want ErrUnexpectedArgs", tc.args, err)
+				t.Errorf("og.Parse(%v) returns err = %v; want ErrUnexpectedArgs", tc.args, err)
 			}
 
 			if len(remaining) == 0 {
-				t.Errorf("after og.Parse(%v), remaining = %v; want non-empty slice", tc.args, remaining)
+				t.Errorf("og.Parse(%v) returns remaining = %v; want non-empty slice", tc.args, remaining)
 			}
 		})
 	}
@@ -104,11 +104,11 @@ func TestParseKnownNoOptions(t *testing.T) {
 
 			remaining, err := og.ParseKnown(tc.args)
 			if err != nil {
-				t.Fatalf("after remaining, err := og.ParseKnown(%v), err == %v; want nil", tc.args, err)
+				t.Fatalf("og.ParseKnown(%v) returns err == %v; want nil", tc.args, err)
 			}
 
 			if diff := cmp.Diff(tc.postArgs, remaining); diff != "" {
-				t.Errorf("after og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
+				t.Errorf("og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
 			}
 		})
 	}
@@ -129,11 +129,11 @@ func TestParseStrictWithOptions(t *testing.T) {
 
 	remaining, err := og.Parse(args)
 	if err != nil {
-		t.Errorf("after remaining, err := og.Parse(%v), err = %v; want nil", args, err)
+		t.Errorf("og.Parse(%v) returns err = %v; want nil", args, err)
 	}
 
 	if len(remaining) != 0 {
-		t.Errorf("after og.Parse(%v), remaining = %v; want empty slice", args, remaining)
+		t.Errorf("og.Parse(%v) returns remaining = %v; want empty slice", args, remaining)
 	}
 
 	if cfg.verbose != true {
@@ -159,12 +159,12 @@ func TestParseKnownWithOptions(t *testing.T) {
 
 	remaining, err := og.ParseKnown(args)
 	if err != nil {
-		t.Errorf("after remaining, err := og.ParseKnown(%v), err = %v; want nil", args, err)
+		t.Errorf("og.ParseKnown(%v) returns err = %v; want nil", args, err)
 	}
 
 	expectedRemaining := []string{"extra", "args"}
 	if diff := cmp.Diff(expectedRemaining, remaining); diff != "" {
-		t.Errorf("after og.ParseKnown(%v); (-want +got):\n%s", args, diff)
+		t.Errorf("og.ParseKnown(%v); (-want +got):\n%s", args, diff)
 	}
 
 	if cfg.verbose != true {
@@ -193,13 +193,13 @@ func TestParseUndefinedOptions(t *testing.T) {
 
 			_, err := og.Parse(tc.args)
 			if err == nil {
-				t.Errorf("after og.Parse(%v), err == nil; want error", tc.args)
+				t.Errorf("og.Parse(%v) returns err == nil; want error", tc.args)
 			}
 
 			og2 := opts.NewGroup("test-parsing")
 			_, err2 := og2.ParseKnown(tc.args)
 			if err2 == nil {
-				t.Errorf("after og.ParseKnown(%v), err == nil; want error", tc.args)
+				t.Errorf("og.ParseKnown(%v) returns err == nil; want error", tc.args)
 			}
 		})
 	}
@@ -231,26 +231,26 @@ func testParseRetryAfterFailure(t *testing.T, parseFunc func(*opts.Group, []stri
 	// First attempt should fail.
 	_, err := parseFunc(og, badArgs)
 	if err == nil {
-		t.Fatalf("after parseFunc(%v), err == nil; want error", badArgs)
+		t.Fatalf("parseFunc(%v) returns err == nil; want error", badArgs)
 	}
 
 	if s != defValue {
-		t.Errorf("after failed parse, s == %q; want %q", s, defValue)
+		t.Errorf("after failed parseFunc(%v), s == %q; want %q", badArgs, s, defValue)
 	}
 
 	// Second attempt should succeed.
 	remaining, err := parseFunc(og, goodArgs)
 	if err != nil {
-		t.Fatalf("after parseFunc(%v), err == %v; want nil", goodArgs, err)
+		t.Fatalf("parseFunc(%v) returns err == %v; want nil", goodArgs, err)
 	}
 
 	if s != goodArgs[1] {
-		t.Errorf("after parseFunc(%v), s == %q; want %q", goodArgs, s, goodArgs[1])
+		t.Errorf("after successful parseFunc(%v), s == %q; want %q", goodArgs, s, goodArgs[1])
 	}
 
 	// For ParseKnown, check remaining args; for Parse, should be empty.
 	expectedRemaining := goodArgs[2:]
 	if diff := cmp.Diff(expectedRemaining, remaining); diff != "" {
-		t.Errorf("after parseFunc(%v); (-want +got):\n%s", goodArgs, diff)
+		t.Errorf("parseFunc(%v); (-want +got):\n%s", goodArgs, diff)
 	}
 }
