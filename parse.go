@@ -9,9 +9,9 @@ import (
 //
 // Parse should be called after all options are defined and before any option
 // values are used. Parse performs strict parsing. If any positional arguments
-// remain after parsing stops, then Parse will return [ErrUnexpectedArgs]. If
-// Parse returns without error, the Group is considered parsed and subsequent
-// calls to Parse will return [ErrAlreadyParsed].
+// remain after parsing stops, then Parse will return  [*UnexpectedArgsError].
+// If Parse returns without error, the Group is considered parsed and
+// subsequent calls to Parse will return [ErrAlreadyParsed].
 //
 // Parsing stops at the first non-option argument. Any remaining arguments can
 // be accessed via the returned slice of strings. Both '-' and '--' are
@@ -19,9 +19,6 @@ import (
 // the returned slice will not contain '--', but it will contain '-'. (By
 // convention, many programs treat '-' as stdin, but that is up to the calling
 // program to decide and handle.)
-//
-// Parse performs strict parsing. If any positional arguments remain after
-// parsing stops, then Parse will return [ErrUnexpectedArgs].
 //
 // If Parse encounters an unknown option, an option without a value, or a value
 // that cannot be parsed as its type, it returns an error and the Group remains
@@ -31,27 +28,27 @@ import (
 // `os.Args` directly, the caller should pass `os.Args[1:]`.
 //
 // Use Parse if your program should not accept leftover arguments.
-func (g *Group) Parse(args []string) ([]string, error) {
+func (g *Group) Parse(args []string) error {
 	if g.parsed {
-		return []string{}, ErrAlreadyParsed
+		return ErrAlreadyParsed
 	}
 
 	err := g.parse(args)
 	if err != nil {
-		return []string{}, err
+		return err
 	}
 
 	if len(g.args) > 0 {
-		return g.args, ErrUnexpectedArgs
+		return &UnexpectedArgsError{Args: g.args}
 	}
 
 	g.parsed = true
 
-	return g.args, nil
+	return nil
 }
 
 // ParseKnown is like Parse in all ways but one: it allows arguments to remain
-// after parsing stops and thus never returns ErrUnexpectedArgs.
+// after parsing stops and thus never returns UnexpectedArgsError.
 //
 // Use ParseKnown if your program expects leftover arguments.
 func (g *Group) ParseKnown(args []string) ([]string, error) {
@@ -153,7 +150,7 @@ func (g *Group) parseOpt(arg string, args []string) ([]string, error) {
 
 	opt, ok := g.opts[name]
 	if !ok {
-		return nil, fmt.Errorf("opts: unknown option --%s", name)
+		return nil, &UnknownOptionError{Option: name}
 	}
 
 	if eqFound {
@@ -171,7 +168,7 @@ func parseEquals(opt *opt, name, value, arg string, args []string) ([]string, er
 	if err := opt.value.set(value); err != nil {
 		// Distinguish no value from a bad value.
 		if value == "" {
-			return nil, fmt.Errorf("opts: --%s: %w", name, ErrMissingValue)
+			return nil, &MissingValueError{Option: name}
 		}
 
 		return nil, &InvalidValueError{
@@ -186,7 +183,7 @@ func parseEquals(opt *opt, name, value, arg string, args []string) ([]string, er
 	// string value. However, for consistency with other option types, we
 	// should return an error indicating that there is no value.
 	if value == "" && arg[len(arg)-1] == '=' {
-		return nil, fmt.Errorf("opts: --%s: %w", name, ErrMissingValue)
+		return nil, &MissingValueError{Option: name}
 	}
 
 	return args, nil
@@ -201,7 +198,7 @@ func parseSpaced(opt *opt, name string, args []string) ([]string, error) {
 	case len(args) > 0:
 		value, args = args[0], args[1:]
 	default:
-		return nil, fmt.Errorf("opts: --%s: %w", name, ErrMissingValue)
+		return nil, &MissingValueError{Option: name}
 	}
 
 	if err := opt.value.set(value); err != nil {

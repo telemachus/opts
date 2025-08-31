@@ -7,80 +7,48 @@ import (
 	"github.com/telemachus/opts"
 )
 
-func TestParseSingleDashUintOption(t *testing.T) {
+func TestParseUint(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		parseFunc func(*opts.Group, []string) ([]string, error)
-		args      []string
-		postArgs  []string
-		want      uint
+		args []string
+		want uint
 	}{
 		"Basic value; single dash": {
-			args:      []string{"-n", "42"},
-			postArgs:  []string{},
-			want:      42,
-			parseFunc: (*opts.Group).Parse,
+			args: []string{"-n", "42"},
+			want: 42,
 		},
 		"Zero; single dash": {
-			args:      []string{"-n", "0"},
-			postArgs:  []string{},
-			want:      0,
-			parseFunc: (*opts.Group).Parse,
+			args: []string{"-n", "0"},
+			want: 0,
 		},
 		"Hex value; single dash": {
-			args:      []string{"-n", "0xff"},
-			postArgs:  []string{},
-			want:      255,
-			parseFunc: (*opts.Group).Parse,
+			args: []string{"-n", "0xff"},
+			want: 255,
 		},
 		"Octal value; single dash": {
-			args:      []string{"-n", "0644"},
-			postArgs:  []string{},
-			want:      420,
-			parseFunc: (*opts.Group).Parse,
-		},
-		"Args after value; single dash": {
-			args:      []string{"-n", "42", "foo", "bar"},
-			postArgs:  []string{"foo", "bar"},
-			want:      42,
-			parseFunc: (*opts.Group).ParseKnown,
+			args: []string{"-n", "0644"},
+			want: 420,
 		},
 		"Space separated; double dash": {
-			args:      []string{"--number", "42"},
-			postArgs:  []string{},
-			want:      42,
-			parseFunc: (*opts.Group).Parse,
+			args: []string{"--number", "42"},
+			want: 42,
 		},
 		"With equals; double dash": {
-			args:      []string{"--number=42"},
-			postArgs:  []string{},
-			want:      42,
-			parseFunc: (*opts.Group).Parse,
+			args: []string{"--number=42"},
+			want: 42,
 		},
 		"Zero; double dash": {
-			args:      []string{"--number", "0"},
-			postArgs:  []string{},
-			want:      0,
-			parseFunc: (*opts.Group).Parse,
+			args: []string{"--number", "0"},
+			want: 0,
 		},
 		"Hex value; double dash": {
-			args:      []string{"--number=0xff"},
-			postArgs:  []string{},
-			want:      255,
-			parseFunc: (*opts.Group).Parse,
+			args: []string{"--number=0xff"},
+			want: 255,
 		},
 		"Octal value; double dash": {
-			args:      []string{"--number=0644"},
-			postArgs:  []string{},
-			want:      420,
-			parseFunc: (*opts.Group).Parse,
-		},
-		"Args after value; double dash": {
-			args:      []string{"--number", "42", "foo", "bar"},
-			postArgs:  []string{"foo", "bar"},
-			want:      42,
-			parseFunc: (*opts.Group).ParseKnown,
+			args: []string{"--number=0644"},
+			want: 420,
 		},
 	}
 
@@ -93,17 +61,58 @@ func TestParseSingleDashUintOption(t *testing.T) {
 			og.Uint(&got, "n", 0)
 			og.Uint(&got, "number", 0)
 
-			postArgs, err := tc.parseFunc(og, tc.args)
+			err := og.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("after err := og.Parse(%v), err == %v; want nil", tc.args, err)
+				t.Fatalf("after og.Parse(%v), err == %v; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
 				t.Errorf("after og.Parse(%v), got = %d; want %d", tc.args, got, tc.want)
 			}
+		})
+	}
+}
 
-			if diff := cmp.Diff(tc.postArgs, postArgs); diff != "" {
-				t.Errorf("after og.Parse(%v); (-want +got):\n%s", tc.args, diff)
+func TestParseUintWithRemainingArgs(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		args     []string
+		postArgs []string
+		want     uint
+	}{
+		"Args after value; single dash": {
+			args:     []string{"-n", "42", "foo", "bar"},
+			postArgs: []string{"foo", "bar"},
+			want:     42,
+		},
+		"Args after value; double dash": {
+			args:     []string{"--number", "42", "foo", "bar"},
+			postArgs: []string{"foo", "bar"},
+			want:     42,
+		},
+	}
+
+	for msg, tc := range testCases {
+		t.Run(msg, func(t *testing.T) {
+			t.Parallel()
+
+			var got uint
+			og := opts.NewGroup("test-parsing")
+			og.Uint(&got, "n", 0)
+			og.Uint(&got, "number", 0)
+
+			remaining, err := og.ParseKnown(tc.args)
+			if err != nil {
+				t.Fatalf("after og.ParseKnown(%v), err == %v; want nil", tc.args, err)
+			}
+
+			if got != tc.want {
+				t.Errorf("after og.ParseKnown(%v), got = %d; want %d", tc.args, got, tc.want)
+			}
+
+			if diff := cmp.Diff(tc.postArgs, remaining); diff != "" {
+				t.Errorf("after og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
 			}
 		})
 	}
@@ -113,40 +122,52 @@ func TestParseUintErrors(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		args []string
+		assertErr func(t *testing.T, err error)
+		args      []string
 	}{
 		"Single dash, no value": {
-			args: []string{"-n"},
+			args:      []string{"-n"},
+			assertErr: checkErrorAs[*opts.MissingValueError],
 		},
 		"Double dash, no value": {
-			args: []string{"--number"},
-		},
-		"Single dash, invalid value": {
-			args: []string{"-n", "xyz"},
-		},
-		"Double dash, invalid value": {
-			args: []string{"--number", "xyz"},
+			args:      []string{"--number"},
+			assertErr: checkErrorAs[*opts.MissingValueError],
 		},
 		"Double dash, equals no value": {
-			args: []string{"--number="},
+			args:      []string{"--number="},
+			assertErr: checkErrorAs[*opts.MissingValueError],
+		},
+		"Single dash, invalid value": {
+			args:      []string{"-n", "xyz"},
+			assertErr: checkErrorAs[*opts.InvalidValueError],
+		},
+		"Double dash, invalid value": {
+			args:      []string{"--number", "xyz"},
+			assertErr: checkErrorAs[*opts.InvalidValueError],
 		},
 		"Double dash, equals invalid": {
-			args: []string{"--number=xyz"},
+			args:      []string{"--number=xyz"},
+			assertErr: checkErrorAs[*opts.InvalidValueError],
 		},
 		"Single dash, negative value": {
-			args: []string{"-n", "-42"},
+			args:      []string{"-n", "-42"},
+			assertErr: checkErrorAs[*opts.InvalidValueError],
 		},
 		"Double dash, negative value": {
-			args: []string{"--number=-42"},
+			args:      []string{"--number=-42"},
+			assertErr: checkErrorAs[*opts.InvalidValueError],
 		},
 		"Single dash, float value": {
-			args: []string{"-n", "3.14"},
+			args:      []string{"-n", "3.14"},
+			assertErr: checkErrorAs[*opts.InvalidValueError],
 		},
 		"Double dash, float value": {
-			args: []string{"--number=3.14"},
+			args:      []string{"--number=3.14"},
+			assertErr: checkErrorAs[*opts.InvalidValueError],
 		},
 		"Double dash, multiple equals": {
-			args: []string{"--number=42=13"},
+			args:      []string{"--number=42=13"},
+			assertErr: checkErrorAs[*opts.InvalidValueError],
 		},
 	}
 
@@ -159,10 +180,12 @@ func TestParseUintErrors(t *testing.T) {
 			og.Uint(&got, "n", 0)
 			og.Uint(&got, "number", 0)
 
-			_, err := og.Parse(tc.args)
+			err := og.Parse(tc.args)
 			if err == nil {
-				t.Errorf("after og.Parse(%v), err == nil; want error", tc.args)
+				t.Fatalf("after og.Parse(%v), err == nil; want error", tc.args)
 			}
+
+			tc.assertErr(t, err)
 		})
 	}
 }

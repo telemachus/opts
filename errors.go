@@ -5,20 +5,37 @@ import (
 	"fmt"
 )
 
-// ErrAlreadyParsed is returned when [Parse] or [ParseKnown] is called on
-// a [Group] that has already been successfully parsed.
+// ErrAlreadyParsed signals an attempt to parse a [Group] that has already been
+// successfully parsed.
 var ErrAlreadyParsed = errors.New("opts: option group already parsed")
 
-// ErrUnexpectedArgs is returned when [Parse] is called and there are remaining
-// args left that have not be registered as options.
-var ErrUnexpectedArgs = errors.New("opts: unexpected arguments remain after parsing")
+// UnexpectedArgsError signals that there are args left after parsing. Only
+// [Parse] will return this error. Use [ParseKnown] for relaxed parsing.
+type UnexpectedArgsError struct {
+	Args []string
+}
 
-// ErrMissingValue is returned when an option that requires a value is not
-// followed by one.
-var ErrMissingValue = errors.New("option requires a value")
+func (e *UnexpectedArgsError) Error() string {
+	var s string
+	if len(e.Args) > 1 {
+		s = "s"
+	}
 
-// InvalidValueError is returned when an option string cannot be converted into
-// the correct type. It wraps the underlying conversion error.
+	return fmt.Sprintf("opts: unexpected argument%s after parsing: %v", s, e.Args)
+}
+
+// MissingValueError signals that an option is missing a required value.
+type MissingValueError struct {
+	Option string
+}
+
+func (e *MissingValueError) Error() string {
+	return fmt.Sprintf("opts: missing value for --%s", e.Option)
+}
+
+// InvalidValueError signals that an option's value cannot be converted into
+// the option's type. Since InvalidValueError wraps the original conversion
+// error, users can access the undedited original as InvalidValueError.Err.
 type InvalidValueError struct {
 	Err    error
 	Option string
@@ -26,9 +43,18 @@ type InvalidValueError struct {
 }
 
 func (e *InvalidValueError) Error() string {
-	return fmt.Sprintf("opts: invalid value %q for option %s: %v", e.Value, e.Option, e.Err)
+	return fmt.Sprintf("opts: invalid value %q for --%s: %v", e.Value, e.Option, e.Err)
 }
 
 func (e *InvalidValueError) Unwrap() error {
 	return e.Err
+}
+
+// UnknownOptionError signals that an option was not registered with the Group.
+type UnknownOptionError struct {
+	Option string
+}
+
+func (e *UnknownOptionError) Error() string {
+	return fmt.Sprintf("opts: unknown option --%s", e.Option)
 }

@@ -11,34 +11,16 @@ func TestParseBool(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		parseFunc func(*opts.Group, []string) ([]string, error)
-		args      []string
-		postArgs  []string
-		want      bool
+		args []string
+		want bool
 	}{
 		"no args; one dash": {
-			args:      []string{"-v"},
-			postArgs:  []string{},
-			want:      true,
-			parseFunc: (*opts.Group).Parse,
-		},
-		"args after option; single dash": {
-			args:      []string{"-v", "foo", "bar"},
-			postArgs:  []string{"foo", "bar"},
-			want:      true,
-			parseFunc: (*opts.Group).ParseKnown,
+			args: []string{"-v"},
+			want: true,
 		},
 		"no args; two dashes": {
-			args:      []string{"--verbose"},
-			postArgs:  []string{},
-			want:      true,
-			parseFunc: (*opts.Group).Parse,
-		},
-		"args after option; two dashes": {
-			args:      []string{"--verbose", "foo", "bar"},
-			postArgs:  []string{"foo", "bar"},
-			want:      true,
-			parseFunc: (*opts.Group).ParseKnown,
+			args: []string{"--verbose"},
+			want: true,
 		},
 	}
 
@@ -51,17 +33,58 @@ func TestParseBool(t *testing.T) {
 			og.Bool(&got, "v")
 			og.Bool(&got, "verbose")
 
-			remaining, err := tc.parseFunc(og, tc.args)
+			err := og.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("after remaining, err := parseFunc(%v), err == %v; want nil", tc.args, err)
+				t.Fatalf("after og.Parse(%v), err == %v; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("after parseFunc(%v), got = %t; want %t", tc.args, got, tc.want)
+				t.Errorf("after og.Parse(%v), got = %t; want %t", tc.args, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestParseBoolWithRemainingArgs(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		args     []string
+		postArgs []string
+		want     bool
+	}{
+		"args after option; single dash": {
+			args:     []string{"-v", "foo", "bar"},
+			postArgs: []string{"foo", "bar"},
+			want:     true,
+		},
+		"args after option; two dashes": {
+			args:     []string{"--verbose", "foo", "bar"},
+			postArgs: []string{"foo", "bar"},
+			want:     true,
+		},
+	}
+
+	for msg, tc := range testCases {
+		t.Run(msg, func(t *testing.T) {
+			t.Parallel()
+
+			var got bool
+			og := opts.NewGroup("test-parsing")
+			og.Bool(&got, "v")
+			og.Bool(&got, "verbose")
+
+			remaining, err := og.ParseKnown(tc.args)
+			if err != nil {
+				t.Fatalf("after og.ParseKnown(%v), err == %v; want nil", tc.args, err)
+			}
+
+			if got != tc.want {
+				t.Errorf("after og.ParseKnown(%v), got = %t; want %t", tc.args, got, tc.want)
 			}
 
 			if diff := cmp.Diff(tc.postArgs, remaining); diff != "" {
-				t.Errorf("after parseFunc(%v); (-want +got):\n%s", tc.args, diff)
+				t.Errorf("after og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
 			}
 		})
 	}
@@ -71,25 +94,12 @@ func TestParseBoolError(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		parseFunc func(*opts.Group, []string) ([]string, error)
-		args      []string
+		args []string
 	}{
-		"bool with equals true": {
-			args:      []string{"--verbose=true"},
-			parseFunc: (*opts.Group).Parse,
-		},
-		"bool with equals false": {
-			args:      []string{"--verbose=false"},
-			parseFunc: (*opts.Group).ParseKnown,
-		},
-		"bool with equals empty": {
-			args:      []string{"--verbose="},
-			parseFunc: (*opts.Group).Parse,
-		},
-		"bool with equals random string": {
-			args:      []string{"--verbose=yadda-yadda"},
-			parseFunc: (*opts.Group).ParseKnown,
-		},
+		"bool with equals true":          {args: []string{"--verbose=true"}},
+		"bool with equals false":         {args: []string{"--verbose=false"}},
+		"bool with equals empty":         {args: []string{"--verbose="}},
+		"bool with equals random string": {args: []string{"--verbose=yadda-yadda"}},
 	}
 
 	for msg, tc := range testCases {
@@ -100,9 +110,16 @@ func TestParseBoolError(t *testing.T) {
 			og := opts.NewGroup("test-parsing")
 			og.Bool(&got, "verbose")
 
-			_, err := tc.parseFunc(og, tc.args)
+			err := og.Parse(tc.args)
 			if err == nil {
-				t.Fatalf("after parseFunc(%v), err == nil; want error", tc.args)
+				t.Fatalf("after og.Parse(%v), err == nil; want error", tc.args)
+			}
+
+			og2 := opts.NewGroup("test-parsing")
+			og2.Bool(&got, "verbose")
+			_, err2 := og2.ParseKnown(tc.args)
+			if err2 == nil {
+				t.Fatalf("after og.ParseKnown(%v), err == nil; want error", tc.args)
 			}
 		})
 	}

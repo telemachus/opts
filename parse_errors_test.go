@@ -2,9 +2,9 @@ package opts_test
 
 import (
 	"errors"
-	"strconv"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/telemachus/opts"
 )
 
@@ -12,24 +12,36 @@ func TestParseAlreadyParsedError(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		firstCall  func(*opts.Group, []string) ([]string, error)
-		secondCall func(*opts.Group, []string) ([]string, error)
+		firstCall  func(*opts.Group, []string) error
+		secondCall func(*opts.Group, []string) error
 	}{
 		"Parse then Parse": {
 			firstCall:  (*opts.Group).Parse,
 			secondCall: (*opts.Group).Parse,
 		},
-		"ParseKnown then ParseKnown": {
-			firstCall:  (*opts.Group).ParseKnown,
-			secondCall: (*opts.Group).ParseKnown,
-		},
 		"Parse then ParseKnown": {
-			firstCall:  (*opts.Group).Parse,
-			secondCall: (*opts.Group).ParseKnown,
+			firstCall: (*opts.Group).Parse,
+			secondCall: func(g *opts.Group, args []string) error {
+				_, err := g.ParseKnown(args)
+				return err
+			},
 		},
 		"ParseKnown then Parse": {
-			firstCall:  (*opts.Group).ParseKnown,
+			firstCall: func(g *opts.Group, args []string) error {
+				_, err := g.ParseKnown(args)
+				return err
+			},
 			secondCall: (*opts.Group).Parse,
+		},
+		"ParseKnown then ParseKnown": {
+			firstCall: func(g *opts.Group, args []string) error {
+				_, err := g.ParseKnown(args)
+				return err
+			},
+			secondCall: func(g *opts.Group, args []string) error {
+				_, err := g.ParseKnown(args)
+				return err
+			},
 		},
 	}
 
@@ -41,14 +53,14 @@ func TestParseAlreadyParsedError(t *testing.T) {
 			var b bool
 			og.Bool(&b, "verbose")
 
-			// First call should succeed
-			_, err := tc.firstCall(og, []string{"-verbose"})
+			// First call should succeed.
+			err := tc.firstCall(og, []string{"-verbose"})
 			if err != nil {
 				t.Fatalf("first call failed: %v", err)
 			}
 
-			// Second call should return ErrAlreadyParsed
-			_, err = tc.secondCall(og, []string{"-verbose"})
+			// Second call should return ErrAlreadyParsed.
+			err = tc.secondCall(og, []string{"-verbose"})
 			if !errors.Is(err, opts.ErrAlreadyParsed) {
 				t.Errorf("expected ErrAlreadyParsed, got %v", err)
 			}
@@ -63,9 +75,24 @@ func TestParseUnexpectedArgsError(t *testing.T) {
 	var b bool
 	og.Bool(&b, "verbose")
 
-	_, err := og.Parse([]string{"-verbose", "extra", "args"})
-	if !errors.Is(err, opts.ErrUnexpectedArgs) {
-		t.Errorf("expected ErrUnexpectedArgs, got %v", err)
+	err := og.Parse([]string{"-verbose", "extra", "args"})
+
+	var uae *opts.UnexpectedArgsError
+	if !errors.As(err, &uae) {
+		t.Errorf("expected UnexpectedArgsError, got %T: %v", err, err)
+		return
+	}
+
+	expectedArgs := []string{"extra", "args"}
+	if len(uae.Args) != len(expectedArgs) {
+		t.Errorf("expected %d unexpected args, got %d", len(expectedArgs), len(uae.Args))
+		return
+	}
+
+	for i, expected := range expectedArgs {
+		if uae.Args[i] != expected {
+			t.Errorf("expected arg[%d] = %q, got %q", i, expected, uae.Args[i])
+		}
 	}
 }
 
@@ -110,9 +137,11 @@ func TestParseMissingValueError(t *testing.T) {
 			t.Parallel()
 
 			og := tc.setup()
-			_, err := og.Parse(tc.args)
-			if !errors.Is(err, opts.ErrMissingValue) {
-				t.Errorf("expected ErrMissingValue, got %v", err)
+			err := og.Parse(tc.args)
+
+			var mve *opts.MissingValueError
+			if !errors.As(err, &mve) {
+				t.Errorf("want MissingValueError, got %T: %v", err, err)
 			}
 		})
 	}
@@ -159,7 +188,7 @@ func TestParseInvalidValueError(t *testing.T) {
 			t.Parallel()
 
 			og := tc.setup()
-			_, err := og.Parse(tc.args)
+			err := og.Parse(tc.args)
 
 			var ive *opts.InvalidValueError
 			if !errors.As(err, &ive) {
@@ -169,11 +198,6 @@ func TestParseInvalidValueError(t *testing.T) {
 
 			if ive.Err == nil {
 				t.Error("InvalidValueError.Err should not be nil")
-			}
-
-			// Check that it's a reasonable underlying error type
-			if !errors.Is(ive.Err, strconv.ErrSyntax) && !errors.Is(ive.Err, strconv.ErrRange) {
-				t.Logf("Underlying error: %T: %v", ive.Err, ive.Err)
 			}
 		})
 	}
@@ -211,7 +235,7 @@ func TestParseGeneralErrors(t *testing.T) {
 			t.Parallel()
 
 			og := tc.setup()
-			_, err := og.Parse(tc.args)
+			err := og.Parse(tc.args)
 			if err == nil {
 				t.Error("expected an error but got none")
 			}
@@ -219,14 +243,15 @@ func TestParseGeneralErrors(t *testing.T) {
 	}
 }
 
-func TestParseKnownDoesNotErrorOnExtraArgs(t *testing.T) {
+func TestParseKnownReturnsExtraArgs(t *testing.T) {
 	t.Parallel()
 
 	og := opts.NewGroup("test")
 	var verbose bool
 	og.Bool(&verbose, "verbose")
 
-	remaining, err := og.ParseKnown([]string{"-verbose", "extra", "args"})
+	args := []string{"-verbose", "extra", "args"}
+	remaining, err := og.ParseKnown(args)
 	if err != nil {
 		t.Errorf("ParseKnown should not error on extra args, got: %v", err)
 	}
@@ -235,15 +260,8 @@ func TestParseKnownDoesNotErrorOnExtraArgs(t *testing.T) {
 		t.Error("verbose should be true")
 	}
 
-	expectedRemaining := []string{"extra", "args"}
-	if len(remaining) != len(expectedRemaining) {
-		t.Errorf("expected %d remaining args, got %d", len(expectedRemaining), len(remaining))
-	}
-
-	for i, expected := range expectedRemaining {
-		if i >= len(remaining) || remaining[i] != expected {
-			t.Errorf("expected remaining[%d] = %q, got %q", i, expected, remaining[i])
-		}
+	if diff := cmp.Diff(args[1:], remaining); diff != "" {
+		t.Errorf("ParseKnown remaining args (-want +got):\n%s", diff)
 	}
 }
 
@@ -254,7 +272,7 @@ func TestInvalidValueErrorWrapping(t *testing.T) {
 	var i int
 	og.Int(&i, "count", 0)
 
-	_, err := og.Parse([]string{"-count", "not-a-number"})
+	err := og.Parse([]string{"-count", "not-a-number"})
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

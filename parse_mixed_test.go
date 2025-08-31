@@ -11,49 +11,32 @@ func TestParseMultipleDifferentOptions(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		parseFunc func(*opts.Group, []string) ([]string, error)
-		wantS     string
-		args      []string
-		postArgs  []string
-		wantI     int
-		wantF     float64
-		wantB     bool
+		wantS string
+		args  []string
+		wantI int
+		wantF float64
+		wantB bool
 	}{
 		"Mixed single dash options": {
-			args:      []string{"-v", "-n", "42", "-x", "3.14", "-f", "test.txt"},
-			postArgs:  []string{},
-			wantB:     true,
-			wantI:     42,
-			wantF:     3.14,
-			wantS:     "test.txt",
-			parseFunc: (*opts.Group).Parse,
+			args:  []string{"-v", "-n", "42", "-x", "3.14", "-f", "test.txt"},
+			wantB: true,
+			wantI: 42,
+			wantF: 3.14,
+			wantS: "test.txt",
 		},
 		"Mixed double dash options": {
-			args:      []string{"--verbose", "--number", "42", "--value", "3.14", "--file", "test.txt"},
-			postArgs:  []string{},
-			wantB:     true,
-			wantI:     42,
-			wantF:     3.14,
-			wantS:     "test.txt",
-			parseFunc: (*opts.Group).Parse,
+			args:  []string{"--verbose", "--number", "42", "--value", "3.14", "--file", "test.txt"},
+			wantB: true,
+			wantI: 42,
+			wantF: 3.14,
+			wantS: "test.txt",
 		},
 		"Mixed single and double dash options": {
-			args:      []string{"-v", "--number", "42", "-x", "3.14", "--file", "test.txt"},
-			postArgs:  []string{},
-			wantB:     true,
-			wantI:     42,
-			wantF:     3.14,
-			wantS:     "test.txt",
-			parseFunc: (*opts.Group).Parse,
-		},
-		"Mixed single and double dash options with remaining args": {
-			args:      []string{"-v", "-n=42", "--value=3.14", "-f", "test.txt", "foo", "bar"},
-			postArgs:  []string{"foo", "bar"},
-			wantB:     true,
-			wantI:     42,
-			wantF:     3.14,
-			wantS:     "test.txt",
-			parseFunc: (*opts.Group).ParseKnown,
+			args:  []string{"-v", "--number", "42", "-x", "3.14", "--file", "test.txt"},
+			wantB: true,
+			wantI: 42,
+			wantF: 3.14,
+			wantS: "test.txt",
 		},
 	}
 
@@ -76,9 +59,9 @@ func TestParseMultipleDifferentOptions(t *testing.T) {
 			og.String(&gotS, "f", "")
 			og.String(&gotS, "file", "")
 
-			postArgs, err := tc.parseFunc(og, tc.args)
+			err := og.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("after err := og.Parse(%v), err == %v; want nil", tc.args, err)
+				t.Fatalf("after og.Parse(%v), err == %v; want nil", tc.args, err)
 			}
 
 			if gotB != tc.wantB {
@@ -93,10 +76,50 @@ func TestParseMultipleDifferentOptions(t *testing.T) {
 			if gotS != tc.wantS {
 				t.Errorf("after og.Parse(%v), string = %q; want %q", tc.args, gotS, tc.wantS)
 			}
-
-			if diff := cmp.Diff(tc.postArgs, postArgs); diff != "" {
-				t.Errorf("after og.Parse(%v); (-want +got):\n%s", tc.args, diff)
-			}
 		})
+	}
+}
+
+func TestParseMultipleDifferentOptionsWithRemainingArgs(t *testing.T) {
+	t.Parallel()
+
+	args := []string{"-v", "-n=42", "--value=3.14", "-f", "test.txt", "foo", "bar"}
+	postArgs := []string{"foo", "bar"}
+
+	var gotB bool
+	var gotI int
+	var gotF float64
+	var gotS string
+
+	og := opts.NewGroup("test-parsing")
+	og.Bool(&gotB, "v")
+	og.Bool(&gotB, "verbose")
+	og.Int(&gotI, "n", 0)
+	og.Int(&gotI, "number", 0)
+	og.Float64(&gotF, "x", 0.0)
+	og.Float64(&gotF, "value", 0.0)
+	og.String(&gotS, "f", "")
+	og.String(&gotS, "file", "")
+
+	remaining, err := og.ParseKnown(args)
+	if err != nil {
+		t.Fatalf("after og.ParseKnown(%v), err == %v; want nil", args, err)
+	}
+
+	if gotB != true {
+		t.Errorf("after og.ParseKnown(%v), bool = %t; want %t", args, gotB, true)
+	}
+	if gotI != 42 {
+		t.Errorf("after og.ParseKnown(%v), int = %d; want %d", args, gotI, 42)
+	}
+	if gotF != 3.14 {
+		t.Errorf("after og.ParseKnown(%v), float = %g; want %g", args, gotF, 3.14)
+	}
+	if gotS != "test.txt" {
+		t.Errorf("after og.ParseKnown(%v), string = %q; want %q", args, gotS, "test.txt")
+	}
+
+	if diff := cmp.Diff(postArgs, remaining); diff != "" {
+		t.Errorf("after og.ParseKnown(%v); (-want +got):\n%s", args, diff)
 	}
 }
