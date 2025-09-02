@@ -1,6 +1,7 @@
 package opts_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -54,11 +55,11 @@ func TestParseString(t *testing.T) {
 
 			err := og.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("after og.Parse(%v), err == %v; want nil", tc.args, err)
+				t.Fatalf("og.Parse(%v) returns err == %v; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("after og.Parse(%v), got = %q; want %q", tc.args, got, tc.want)
+				t.Errorf("og.Parse(%v) assigns %q to got; want %q", tc.args, got, tc.want)
 			}
 		})
 	}
@@ -94,46 +95,46 @@ func TestParseStringWithRemainingArgs(t *testing.T) {
 
 			remaining, err := og.ParseKnown(tc.args)
 			if err != nil {
-				t.Fatalf("after og.ParseKnown(%v), err == %v; want nil", tc.args, err)
+				t.Fatalf("og.ParseKnown(%v) returns err == %v; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("after og.ParseKnown(%v), got = %q; want %q", tc.args, got, tc.want)
+				t.Errorf("og.ParseKnown(%v) assigns %q to got; want %q", tc.args, got, tc.want)
 			}
 
 			if diff := cmp.Diff(tc.postArgs, remaining); diff != "" {
-				t.Errorf("after og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
+				t.Errorf("og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
 			}
 		})
 	}
 }
 
-func TestParseStringErrors(t *testing.T) {
+func TestParseStringSimpleErrors(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		assertErr func(t *testing.T, err error)
+		errWanted error
 		args      []string
 	}{
 		"No value argument; single dash": {
 			args:      []string{"-file"},
-			assertErr: checkErrorAs[*opts.MissingValueError],
+			errWanted: opts.ErrMissingValue,
 		},
 		"No value argument; double dash": {
 			args:      []string{"--file"},
-			assertErr: checkErrorAs[*opts.MissingValueError],
+			errWanted: opts.ErrMissingValue,
 		},
 		"Equal and empty value; double dash": {
 			args:      []string{"--file="},
-			assertErr: checkErrorAs[*opts.MissingValueError],
+			errWanted: opts.ErrMissingValue,
 		},
 		"Unknown option; single dash": {
 			args:      []string{"-foo", "bar"},
-			assertErr: checkErrorAs[*opts.UnknownOptionError],
+			errWanted: opts.ErrUnknownOption,
 		},
 		"Unknown option; double dash": {
 			args:      []string{"--foo", "bar"},
-			assertErr: checkErrorAs[*opts.UnknownOptionError],
+			errWanted: opts.ErrUnknownOption,
 		},
 	}
 
@@ -146,11 +147,9 @@ func TestParseStringErrors(t *testing.T) {
 			og.String(&got, "file", "whatever")
 
 			err := og.Parse(tc.args)
-			if err == nil {
-				t.Fatalf("after og.Parse(%v), err == nil; want error", tc.args)
+			if !errors.Is(err, tc.errWanted) {
+				t.Fatalf("og.Parse(%v) returns err == nil; want %v", tc.args, tc.errWanted)
 			}
-
-			tc.assertErr(t, err)
 		})
 	}
 }

@@ -61,20 +61,20 @@ func TestParseMultipleDifferentOptions(t *testing.T) {
 
 			err := og.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("after og.Parse(%v), err == %v; want nil", tc.args, err)
+				t.Fatalf("og.Parse(%v) returns %v as err; want nil", tc.args, err)
 			}
 
 			if gotB != tc.wantB {
-				t.Errorf("after og.Parse(%v), bool = %t; want %t", tc.args, gotB, tc.wantB)
+				t.Errorf("og.Parse(%v) assigns %t to bool; want %t", tc.args, gotB, tc.wantB)
 			}
 			if gotI != tc.wantI {
-				t.Errorf("after og.Parse(%v), int = %d; want %d", tc.args, gotI, tc.wantI)
+				t.Errorf("og.Parse(%v) assigns %d to int; want %d", tc.args, gotI, tc.wantI)
 			}
 			if gotF != tc.wantF {
-				t.Errorf("after og.Parse(%v), float = %g; want %g", tc.args, gotF, tc.wantF)
+				t.Errorf("og.Parse(%v) assigns %g to float; want %g", tc.args, gotF, tc.wantF)
 			}
 			if gotS != tc.wantS {
-				t.Errorf("after og.Parse(%v), string = %q; want %q", tc.args, gotS, tc.wantS)
+				t.Errorf("og.Parse(%v) assigns %q to string; want %q", tc.args, gotS, tc.wantS)
 			}
 		})
 	}
@@ -103,23 +103,23 @@ func TestParseMultipleDifferentOptionsWithRemainingArgs(t *testing.T) {
 
 	remaining, err := og.ParseKnown(args)
 	if err != nil {
-		t.Fatalf("after og.ParseKnown(%v), err == %v; want nil", args, err)
+		t.Fatalf("og.ParseKnown(%v) returns %v as err; want nil", args, err)
 	}
 
 	if gotB != true {
-		t.Errorf("after og.ParseKnown(%v), bool = %t; want %t", args, gotB, true)
+		t.Errorf("og.ParseKnown(%v) assigns %t to bool; want %t", args, gotB, true)
 	}
 	if gotI != 42 {
-		t.Errorf("after og.ParseKnown(%v), int = %d; want %d", args, gotI, 42)
+		t.Errorf("og.ParseKnown(%v) assigns %d to int; want %d", args, gotI, 42)
 	}
 	if gotF != 3.14 {
-		t.Errorf("after og.ParseKnown(%v), float = %g; want %g", args, gotF, 3.14)
+		t.Errorf("og.ParseKnown(%v) assigns %g to float; want %g", args, gotF, 3.14)
 	}
 	if gotS != "test.txt" {
-		t.Errorf("after og.ParseKnown(%v), string = %q; want %q", args, gotS, "test.txt")
+		t.Errorf("og.ParseKnown(%v) assigns %q to string; want %q", args, gotS, "test.txt")
 	}
 
 	if diff := cmp.Diff(postArgs, remaining); diff != "" {
-		t.Errorf("after og.ParseKnown(%v); (-want +got):\n%s", args, diff)
+		t.Errorf("og.ParseKnown(%v); (-want +got):\n%s", args, diff)
 	}
 }

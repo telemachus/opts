@@ -1,6 +1,7 @@
 package opts_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -63,11 +64,11 @@ func TestParseFloat64(t *testing.T) {
 
 			err := og.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("after og.Parse(%v), err == %v; want nil", tc.args, err)
+				t.Fatalf("og.Parse(%v) returns %v as err; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("after og.Parse(%v), got = %g; want %g", tc.args, got, tc.want)
+				t.Errorf("og.Parse(%v) assigns %g to got; want %g", tc.args, got, tc.want)
 			}
 		})
 	}
@@ -104,58 +105,38 @@ func TestParseFloat64WithRemainingArgs(t *testing.T) {
 
 			remaining, err := og.ParseKnown(tc.args)
 			if err != nil {
-				t.Fatalf("after og.ParseKnown(%v), err == %v; want nil", tc.args, err)
+				t.Fatalf("og.ParseKnown(%v) returns %v as err; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("after og.ParseKnown(%v), got = %g; want %g", tc.args, got, tc.want)
+				t.Errorf("og.ParseKnown(%v) assigns %g to got; want %g", tc.args, got, tc.want)
 			}
 
 			if diff := cmp.Diff(tc.postArgs, remaining); diff != "" {
-				t.Errorf("after og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
+				t.Errorf("og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
 			}
 		})
 	}
 }
 
-func TestParseFloat64Errors(t *testing.T) {
+func TestParseFloat64ErrMissingValue(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		assertErr func(t *testing.T, err error)
+		errWanted error
 		args      []string
 	}{
 		"Single dash, no value": {
 			args:      []string{"-x"},
-			assertErr: checkErrorAs[*opts.MissingValueError],
+			errWanted: opts.ErrMissingValue,
 		},
 		"Double dash, no value": {
 			args:      []string{"--value"},
-			assertErr: checkErrorAs[*opts.MissingValueError],
+			errWanted: opts.ErrMissingValue,
 		},
 		"Double dash, equals no value": {
 			args:      []string{"--value="},
-			assertErr: checkErrorAs[*opts.MissingValueError],
-		},
-		"Single dash, invalid value": {
-			args:      []string{"-x", "xyz"},
-			assertErr: checkErrorAs[*opts.InvalidValueError],
-		},
-		"Double dash, invalid value": {
-			args:      []string{"--value", "xyz"},
-			assertErr: checkErrorAs[*opts.InvalidValueError],
-		},
-		"Double dash, equals invalid": {
-			args:      []string{"--value=xyz"},
-			assertErr: checkErrorAs[*opts.InvalidValueError],
-		},
-		"Double dash, invalid scientific": {
-			args:      []string{"--value=1e"},
-			assertErr: checkErrorAs[*opts.InvalidValueError],
-		},
-		"Double dash, multiple equals": {
-			args:      []string{"--value=3.14=2.718"},
-			assertErr: checkErrorAs[*opts.InvalidValueError],
+			errWanted: opts.ErrMissingValue,
 		},
 	}
 
@@ -169,11 +150,51 @@ func TestParseFloat64Errors(t *testing.T) {
 			og.Float64(&got, "value", 0.0)
 
 			err := og.Parse(tc.args)
-			if err == nil {
-				t.Fatalf("after og.Parse(%v), err == nil; want error", tc.args)
+			if !errors.Is(err, opts.ErrMissingValue) {
+				t.Fatalf("og.Parse(%v) returns %v as err; want %v", tc.args, err, opts.ErrMissingValue)
 			}
+		})
+	}
+}
 
-			tc.assertErr(t, err)
+func TestParseFloat64InvalidValueError(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		args []string
+	}{
+		"Single dash, invalid value": {
+			args: []string{"-x", "xyz"},
+		},
+		"Double dash, invalid value": {
+			args: []string{"--value", "xyz"},
+		},
+		"Double dash, equals invalid": {
+			args: []string{"--value=xyz"},
+		},
+		"Double dash, invalid scientific": {
+			args: []string{"--value=1e"},
+		},
+		"Double dash, multiple equals": {
+			args: []string{"--value=3.14=2.718"},
+		},
+	}
+
+	for msg, tc := range testCases {
+		t.Run(msg, func(t *testing.T) {
+			t.Parallel()
+
+			var got float64
+			og := opts.NewGroup("test-parsing")
+			og.Float64(&got, "x", 0.0)
+			og.Float64(&got, "value", 0.0)
+
+			err := og.Parse(tc.args)
+			var ive *opts.InvalidValueError
+
+			if !errors.As(err, &ive) {
+				t.Fatalf("og.Parse(%v) returns %T; want *opts.InvalidValueError", tc.args, err)
+			}
 		})
 	}
 }

@@ -30,7 +30,7 @@ import (
 // Use Parse if your program should not accept leftover arguments.
 func (g *Group) Parse(args []string) error {
 	if g.parsed {
-		return ErrAlreadyParsed
+		return fmt.Errorf("opts: option group %q: %w", g.name, ErrAlreadyParsed)
 	}
 
 	err := g.parse(args)
@@ -53,7 +53,7 @@ func (g *Group) Parse(args []string) error {
 // Use ParseKnown if your program expects leftover arguments.
 func (g *Group) ParseKnown(args []string) ([]string, error) {
 	if g.parsed {
-		return []string{}, ErrAlreadyParsed
+		return []string{}, fmt.Errorf("opts: option group %q: %w", g.name, ErrAlreadyParsed)
 	}
 
 	err := g.parse(args)
@@ -118,7 +118,7 @@ func (g *Group) parseByArgType(arg string, args []string) ([]string, error) {
 	case argDoubleDashOpt:
 		return g.parseOpt(arg[2:], args)
 	default:
-		return args, fmt.Errorf("opts: malformed argument: %s", arg)
+		panic(fmt.Sprintf("opts: internal error: impossible arg %q", arg))
 	}
 }
 
@@ -150,7 +150,7 @@ func (g *Group) parseOpt(arg string, args []string) ([]string, error) {
 
 	opt, ok := g.opts[name]
 	if !ok {
-		return nil, &UnknownOptionError{Option: name}
+		return nil, fmt.Errorf("opts: --%s: %w", name, ErrUnknownOption)
 	}
 
 	if eqFound {
@@ -162,13 +162,13 @@ func (g *Group) parseOpt(arg string, args []string) ([]string, error) {
 
 func parseEquals(opt *opt, name, value, arg string, args []string) ([]string, error) {
 	if opt.isBool {
-		return nil, fmt.Errorf("opts: --%s=%s: boolean options do not accept values", name, value)
+		return nil, fmt.Errorf("opts: --%s=%s: %w", name, value, ErrBooleanWithValue)
 	}
 
 	if err := opt.value.set(value); err != nil {
 		// Distinguish no value from a bad value.
 		if value == "" {
-			return nil, &MissingValueError{Option: name}
+			return nil, fmt.Errorf("opts: --%s=: %w", name, ErrMissingValue)
 		}
 
 		return nil, &InvalidValueError{
@@ -183,7 +183,7 @@ func parseEquals(opt *opt, name, value, arg string, args []string) ([]string, er
 	// string value. However, for consistency with other option types, we
 	// should return an error indicating that there is no value.
 	if value == "" && arg[len(arg)-1] == '=' {
-		return nil, &MissingValueError{Option: name}
+		return nil, fmt.Errorf("opts: --%s=: %w", name, ErrMissingValue)
 	}
 
 	return args, nil
@@ -198,7 +198,7 @@ func parseSpaced(opt *opt, name string, args []string) ([]string, error) {
 	case len(args) > 0:
 		value, args = args[0], args[1:]
 	default:
-		return nil, &MissingValueError{Option: name}
+		return nil, fmt.Errorf("opts: --%s: %w", name, ErrMissingValue)
 	}
 
 	if err := opt.value.set(value); err != nil {

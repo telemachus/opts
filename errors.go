@@ -7,7 +7,17 @@ import (
 
 // ErrAlreadyParsed signals an attempt to parse a [Group] that has already been
 // successfully parsed.
-var ErrAlreadyParsed = errors.New("opts: option group already parsed")
+var ErrAlreadyParsed = errors.New("already parsed")
+
+// ErrBooleanWithValue signals an unsupported use of "option=value" with
+// a boolean.
+var ErrBooleanWithValue = errors.New("boolean options do not accept values")
+
+// ErrMissingValue signals that an option is missing a required value.
+var ErrMissingValue = errors.New("missing required value")
+
+// ErrUnknownOption signals that an option was not registered with the [Group].
+var ErrUnknownOption = errors.New("unknown option")
 
 // UnexpectedArgsError signals that there are args left after parsing. Only
 // [Parse] will return this error. Use [ParseKnown] for relaxed parsing.
@@ -22,15 +32,6 @@ func (e *UnexpectedArgsError) Error() string {
 	}
 
 	return fmt.Sprintf("opts: unexpected argument%s after parsing: %v", s, e.Args)
-}
-
-// MissingValueError signals that an option is missing a required value.
-type MissingValueError struct {
-	Option string
-}
-
-func (e *MissingValueError) Error() string {
-	return fmt.Sprintf("opts: missing value for --%s", e.Option)
 }
 
 // InvalidValueError signals that an option's value cannot be converted into
@@ -48,13 +49,4 @@ func (e *InvalidValueError) Error() string {
 
 func (e *InvalidValueError) Unwrap() error {
 	return e.Err
-}
-
-// UnknownOptionError signals that an option was not registered with the Group.
-type UnknownOptionError struct {
-	Option string
-}
-
-func (e *UnknownOptionError) Error() string {
-	return fmt.Sprintf("opts: unknown option --%s", e.Option)
 }

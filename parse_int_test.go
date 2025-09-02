@@ -1,6 +1,7 @@
 package opts_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -47,11 +48,11 @@ func TestParseInt(t *testing.T) {
 
 			err := og.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("after og.Parse(%v), err == %v; want nil", tc.args, err)
+				t.Fatalf("og.Parse(%v) returns err == %v; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("after og.Parse(%v), got = %d; want %d", tc.args, got, tc.want)
+				t.Errorf("og.Parse(%v) assigns %d to got; want %d", tc.args, got, tc.want)
 			}
 		})
 	}
@@ -88,62 +89,50 @@ func TestParseIntWithRemainingArgs(t *testing.T) {
 
 			remaining, err := og.ParseKnown(tc.args)
 			if err != nil {
-				t.Fatalf("after og.ParseKnown(%v), err == %v; want nil", tc.args, err)
+				t.Fatalf("og.ParseKnown(%v) returns err == %v; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("after og.ParseKnown(%v), got = %d; want %d", tc.args, got, tc.want)
+				t.Errorf("og.ParseKnown(%v) assigns %d to got; want %d", tc.args, got, tc.want)
 			}
 
 			if diff := cmp.Diff(tc.postArgs, remaining); diff != "" {
-				t.Errorf("after og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
+				t.Errorf("og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
 			}
 		})
 	}
 }
 
-func TestParseIntErrors(t *testing.T) {
+func TestParseIntSimpleErrors(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		assertErr func(t *testing.T, err error)
+		errWanted error
 		args      []string
 	}{
 		"Single dash, no value": {
 			args:      []string{"-n"},
-			assertErr: checkErrorAs[*opts.MissingValueError],
+			errWanted: opts.ErrMissingValue,
 		},
 		"Double dash, no value": {
 			args:      []string{"--number"},
-			assertErr: checkErrorAs[*opts.MissingValueError],
+			errWanted: opts.ErrMissingValue,
+		},
+		"Single dash, equals no value": {
+			args:      []string{"-n="},
+			errWanted: opts.ErrMissingValue,
 		},
 		"Double dash, equals no value": {
 			args:      []string{"--number="},
-			assertErr: checkErrorAs[*opts.MissingValueError],
+			errWanted: opts.ErrMissingValue,
 		},
-		"Single dash, invalid value": {
-			args:      []string{"-n", "xyz"},
-			assertErr: checkErrorAs[*opts.InvalidValueError],
+		"Single dash, unknown option": {
+			args:      []string{"-q"},
+			errWanted: opts.ErrUnknownOption,
 		},
-		"Double dash, invalid value": {
-			args:      []string{"--number", "xyz"},
-			assertErr: checkErrorAs[*opts.InvalidValueError],
-		},
-		"Double dash, equals invalid": {
-			args:      []string{"--number=xyz"},
-			assertErr: checkErrorAs[*opts.InvalidValueError],
-		},
-		"Single dash, float value": {
-			args:      []string{"-n", "3.14"},
-			assertErr: checkErrorAs[*opts.InvalidValueError],
-		},
-		"Double dash, float value": {
-			args:      []string{"--number=3.14"},
-			assertErr: checkErrorAs[*opts.InvalidValueError],
-		},
-		"Double dash, multiple equals": {
-			args:      []string{"--number=42=13"},
-			assertErr: checkErrorAs[*opts.InvalidValueError],
+		"Double dash, unknown option": {
+			args:      []string{"--quiet"},
+			errWanted: opts.ErrUnknownOption,
 		},
 	}
 
@@ -157,11 +146,54 @@ func TestParseIntErrors(t *testing.T) {
 			og.Int(&got, "number", 0)
 
 			err := og.Parse(tc.args)
-			if err == nil {
-				t.Fatalf("after og.Parse(%v), err == nil; want error", tc.args)
+			if !errors.Is(err, tc.errWanted) {
+				t.Fatalf("og.Parse(%v) returns err == %v; want %v", tc.args, err, tc.errWanted)
 			}
+		})
+	}
+}
 
-			tc.assertErr(t, err)
+func TestParseIntErrors(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		errWanted error
+		args      []string
+	}{
+		"Single dash, invalid value": {
+			args: []string{"-n", "xyz"},
+		},
+		"Double dash, invalid value": {
+			args: []string{"--number", "xyz"},
+		},
+		"Double dash, equals invalid": {
+			args: []string{"--number=xyz"},
+		},
+		"Single dash, float value": {
+			args: []string{"-n", "3.14"},
+		},
+		"Double dash, float value": {
+			args: []string{"--number=3.14"},
+		},
+		"Double dash, multiple equals": {
+			args: []string{"--number=42=13"},
+		},
+	}
+
+	for msg, tc := range testCases {
+		t.Run(msg, func(t *testing.T) {
+			t.Parallel()
+
+			var got int
+			og := opts.NewGroup("test-parsing")
+			og.Int(&got, "n", 0)
+			og.Int(&got, "number", 0)
+
+			err := og.Parse(tc.args)
+			var ive *opts.InvalidValueError
+			if !errors.As(err, &ive) {
+				t.Fatalf("Parse(%v) returns %T; want InvalidValueError", tc.args, err)
+			}
 		})
 	}
 }
