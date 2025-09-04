@@ -56,12 +56,12 @@ func TestParseStrictWithRemainingArgs(t *testing.T) {
 
 			err := og.Parse(tc.args)
 			if err == nil {
-				t.Fatalf("og.Parse(%v) returns err == nil; want UnexpectedArgsError", tc.args)
+				t.Fatalf("og.Parse(%v) returns err == nil; want UnexpectedArgumentsError", tc.args)
 			}
 
-			var uae *opts.UnexpectedArgsError
+			var uae *opts.UnexpectedArgumentsError
 			if !errors.As(err, &uae) {
-				t.Fatalf("og.Parse(%v) returns err = %v; want UnexpectedArgsError", tc.args, err)
+				t.Fatalf("og.Parse(%v) returns err = %v; want UnexpectedArgumentsError", tc.args, err)
 			}
 
 			if len(uae.Args) == 0 {
@@ -338,9 +338,9 @@ func TestParseUnexpectedArgsError(t *testing.T) {
 
 	err := og.Parse(args)
 
-	var uae *opts.UnexpectedArgsError
+	var uae *opts.UnexpectedArgumentsError
 	if !errors.As(err, &uae) {
-		t.Fatalf("Parse(%v) returns %T; want UnexpectedArgsError", args, err)
+		t.Fatalf("Parse(%v) returns %T; want UnexpectedArgumentsError", args, err)
 	}
 
 	expectedArgs := []string{"extra", "args"}

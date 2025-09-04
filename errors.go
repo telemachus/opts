@@ -3,6 +3,8 @@ package opts
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 // ErrAlreadyParsed signals an attempt to parse a [Group] that has already been
@@ -19,19 +21,33 @@ var ErrMissingValue = errors.New("missing required value")
 // ErrUnknownOption signals that an option was not registered with the [Group].
 var ErrUnknownOption = errors.New("unknown option")
 
-// UnexpectedArgsError signals that there are args left after parsing. Only
-// [Parse] will return this error. Use [ParseKnown] for relaxed parsing.
-type UnexpectedArgsError struct {
+// UnexpectedArgumentsError signals that there are one or more arguments left
+// after parsing. Only [Parse] will return this error. Use [ParseKnown] for
+// relaxed parsing.
+type UnexpectedArgumentsError struct {
 	Args []string
 }
 
-func (e *UnexpectedArgsError) Error() string {
+func (e *UnexpectedArgumentsError) Error() string {
 	var s string
 	if len(e.Args) > 1 {
 		s = "s"
 	}
 
-	return fmt.Sprintf("opts: unexpected argument%s after parsing: %v", s, e.Args)
+	return fmt.Sprintf("opts: unexpected argument%s: %s", s, quotedArgs(e.Args))
+}
+
+// We can rely on Args having at least one item since Parse does not return
+// UnexpectedArgumentsError if there are no leftover arguments.
+func quotedArgs(items []string) string {
+	var b strings.Builder
+	b.WriteString(strconv.Quote(items[0]))
+	for _, str := range items[1:] {
+		b.WriteString(", ")
+		b.WriteString(strconv.Quote(str))
+	}
+
+	return b.String()
 }
 
 // InvalidValueError signals that an option's value cannot be converted into

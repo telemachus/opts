@@ -39,7 +39,7 @@ func (g *Group) Parse(args []string) error {
 	}
 
 	if len(g.args) > 0 {
-		return &UnexpectedArgsError{Args: g.args}
+		return &UnexpectedArgumentsError{Args: g.args}
 	}
 
 	g.parsed = true
