@@ -27,6 +27,7 @@ linters-settings:
       - fmt.Println
       - fmt.Fprintf
       - fmt.Fprintln
+      - (strings.Builder).WriteString
   exhaustive:
     default-signifies-exhaustive: true
   goconst:
