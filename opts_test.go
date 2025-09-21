@@ -1,36 +1,24 @@
-package opts
+package opts_test
 
 import (
 	"testing"
 	"time"
 
 	"cloud.google.com/go/civil"
+	"github.com/telemachus/opts"
 )
 
 func TestNewGroup(t *testing.T) {
 	t.Parallel()
 
 	name := "test-opts"
-	og := NewGroup(name)
+	og := opts.NewGroup(name)
 	if og == nil {
 		t.Fatalf("NewGroup(%q) returned nil", name)
 	}
 
 	if og.Name() != name {
 		t.Errorf("og.Name(%q) == %q; want %q", name, og.Name(), name)
-	}
-}
-
-func TestOptRegistrationValid(t *testing.T) {
-	t.Parallel()
-
-	name := "verbose"
-	og := NewGroup("test-optiongroup")
-	var got bool
-	og.Bool(&got, name)
-
-	if opt := og.opts[name]; opt == nil {
-		t.Errorf("option --%s not registered", name)
 	}
 }
 
@@ -59,7 +47,7 @@ func TestOptRegistrationInvalid(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			og := NewGroup("test-optiongroup")
+			og := opts.NewGroup("test-optiongroup")
 			defer func() {
 				if r := recover(); r == nil {
 					t.Error("expected panic on invalid name")
@@ -75,75 +63,75 @@ func TestDuplicateOptRegistration(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		first  func(*Group)
-		second func(*Group)
+		first  func(*opts.Group)
+		second func(*opts.Group)
 	}{
 		"duplicate bool": {
-			first: func(og *Group) {
+			first: func(og *opts.Group) {
 				var b bool
 				og.Bool(&b, "verbose")
 			},
-			second: func(og *Group) {
+			second: func(og *opts.Group) {
 				var b bool
 				og.Bool(&b, "verbose")
 			},
 		},
 		"duplicate date": {
-			first: func(og *Group) {
+			first: func(og *opts.Group) {
 				var d civil.Date
 				og.Date(&d, "birthday", civil.Date{Year: 1972, Month: 6, Day: 23})
 			},
-			second: func(og *Group) {
+			second: func(og *opts.Group) {
 				var d civil.Date
 				og.Date(&d, "birthday", civil.Date{Year: 1972, Month: 6, Day: 23})
 			},
 		},
 		"duplicate duration": {
-			first: func(og *Group) {
+			first: func(og *opts.Group) {
 				var d time.Duration
 				og.Duration(&d, "count", time.Nanosecond)
 			},
-			second: func(og *Group) {
+			second: func(og *opts.Group) {
 				var d time.Duration
 				og.DurationZero(&d, "count")
 			},
 		},
 		"duplicate float64": {
-			first: func(og *Group) {
+			first: func(og *opts.Group) {
 				var f float64
 				og.Float64(&f, "count", 1.0)
 			},
-			second: func(og *Group) {
+			second: func(og *opts.Group) {
 				var f float64
 				og.Float64Zero(&f, "count")
 			},
 		},
 		"duplicate int": {
-			first: func(og *Group) {
+			first: func(og *opts.Group) {
 				var i int
 				og.Int(&i, "count", 1)
 			},
-			second: func(og *Group) {
+			second: func(og *opts.Group) {
 				var i int
 				og.IntZero(&i, "count")
 			},
 		},
 		"duplicate string": {
-			first: func(og *Group) {
+			first: func(og *opts.Group) {
 				var s string
 				og.String(&s, "file", "first")
 			},
-			second: func(og *Group) {
+			second: func(og *opts.Group) {
 				var s string
 				og.StringZero(&s, "file")
 			},
 		},
 		"duplicate uint": {
-			first: func(og *Group) {
+			first: func(og *opts.Group) {
 				var u uint
 				og.Uint(&u, "count", 1)
 			},
-			second: func(og *Group) {
+			second: func(og *opts.Group) {
 				var u uint
 				og.UintZero(&u, "count")
 			},
@@ -154,7 +142,7 @@ func TestDuplicateOptRegistration(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			og := NewGroup("test-optiongroup")
+			og := opts.NewGroup("test-optiongroup")
 			tc.first(og)
 			defer func() {
 				if r := recover(); r == nil {

@@ -20,17 +20,22 @@ import (
 // =				equal
 const junk = "\x00 \t\n\v\f\r\a\b\x1b\u0085\u00A0\"'`\\="
 
+// Valid names must not be empty, begin with "-", or contain junk characters.
 func isValidName(name string) bool {
-	isEmpty := name == ""
-	initialDash := !isEmpty && name[0] == '-'
-	hasJunk := strings.ContainsAny(name, junk)
-	isValid := !isEmpty && !initialDash && !hasJunk
-
-	return isValid
+	switch {
+	case name == "":
+		return false
+	case name[0] == '-':
+		return false
+	case strings.ContainsAny(name, junk):
+		return false
+	default:
+		return true
+	}
 }
 
 func validateName(funcName, optName string) error {
-	if valid := isValidName(optName); !valid {
+	if !isValidName(optName) {
 		return fmt.Errorf("opts: %s: invalid name: %s", funcName, optName)
 	}
 

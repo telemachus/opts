@@ -1,7 +1,7 @@
-// parse_duration_test.go
 package opts_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -9,7 +9,88 @@ import (
 	"github.com/telemachus/opts"
 )
 
-func TestParseSingleDashDurationOption(t *testing.T) {
+func TestParseDuration(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		args []string
+		want time.Duration
+	}{
+		"Basic seconds; single dash": {
+			args: []string{"-duration", "10s"},
+			want: 10 * time.Second,
+		},
+		"Zero; single dash": {
+			args: []string{"-duration", "0s"},
+			want: 0,
+		},
+		"Minutes; single dash": {
+			args: []string{"-duration", "5m"},
+			want: 5 * time.Minute,
+		},
+		"Hours; single dash": {
+			args: []string{"-duration", "2h"},
+			want: 2 * time.Hour,
+		},
+		"Complex duration; single dash": {
+			args: []string{"-duration", "2h30m"},
+			want: 2*time.Hour + 30*time.Minute,
+		},
+		"Milliseconds; single dash": {
+			args: []string{"-duration", "1500ms"},
+			want: 1500 * time.Millisecond,
+		},
+		"Space separated; two dashes": {
+			args: []string{"--duration", "10s"},
+			want: 10 * time.Second,
+		},
+		"With equals; two dashes": {
+			args: []string{"--duration=10s"},
+			want: 10 * time.Second,
+		},
+		"Zero; two dashes": {
+			args: []string{"--duration", "0s"},
+			want: 0,
+		},
+		"Minutes; two dashes": {
+			args: []string{"--duration=5m"},
+			want: 5 * time.Minute,
+		},
+		"Hours; two dashes": {
+			args: []string{"--duration", "2h"},
+			want: 2 * time.Hour,
+		},
+		"Complex duration; two dashes": {
+			args: []string{"--duration=2h30m"},
+			want: 2*time.Hour + 30*time.Minute,
+		},
+		"Milliseconds; two dashes": {
+			args: []string{"--duration", "1500ms"},
+			want: 1500 * time.Millisecond,
+		},
+	}
+
+	for msg, tc := range testCases {
+		t.Run(msg, func(t *testing.T) {
+			t.Parallel()
+
+			var got time.Duration
+			og := opts.NewGroup("test-parsing")
+			og.Duration(&got, "duration", 0)
+
+			err := og.Parse(tc.args)
+			if err != nil {
+				t.Fatalf("og.Parse(%v) returns %v as err; want nil", tc.args, err)
+			}
+
+			if got != tc.want {
+				t.Errorf("og.Parse(%v) assigns %v to got; want %v", tc.args, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestParseDurationWithRemainingArgs(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -17,75 +98,10 @@ func TestParseSingleDashDurationOption(t *testing.T) {
 		postArgs []string
 		want     time.Duration
 	}{
-		"Basic seconds; single dash": {
-			args:     []string{"-duration", "10s"},
-			postArgs: []string{},
-			want:     10 * time.Second,
-		},
-		"Zero; single dash": {
-			args:     []string{"-duration", "0s"},
-			postArgs: []string{},
-			want:     0,
-		},
-		"Minutes; single dash": {
-			args:     []string{"-duration", "5m"},
-			postArgs: []string{},
-			want:     5 * time.Minute,
-		},
-		"Hours; single dash": {
-			args:     []string{"-duration", "2h"},
-			postArgs: []string{},
-			want:     2 * time.Hour,
-		},
-		"Complex duration; single dash": {
-			args:     []string{"-duration", "2h30m"},
-			postArgs: []string{},
-			want:     2*time.Hour + 30*time.Minute,
-		},
-		"Milliseconds; single dash": {
-			args:     []string{"-duration", "1500ms"},
-			postArgs: []string{},
-			want:     1500 * time.Millisecond,
-		},
 		"Args after value; single dash": {
 			args:     []string{"-duration", "1h", "foo", "bar"},
 			postArgs: []string{"foo", "bar"},
 			want:     time.Hour,
-		},
-		"Space separated; two dashes": {
-			args:     []string{"--duration", "10s"},
-			postArgs: []string{},
-			want:     10 * time.Second,
-		},
-		"With equals; two dashes": {
-			args:     []string{"--duration=10s"},
-			postArgs: []string{},
-			want:     10 * time.Second,
-		},
-		"Zero; two dashes": {
-			args:     []string{"--duration", "0s"},
-			postArgs: []string{},
-			want:     0,
-		},
-		"Minutes; two dashes": {
-			args:     []string{"--duration=5m"},
-			postArgs: []string{},
-			want:     5 * time.Minute,
-		},
-		"Hours; two dashes": {
-			args:     []string{"--duration", "2h"},
-			postArgs: []string{},
-			want:     2 * time.Hour,
-		},
-		"Complex duration; two dashes": {
-			args:     []string{"--duration=2h30m"},
-			postArgs: []string{},
-			want:     2*time.Hour + 30*time.Minute,
-		},
-		"Milliseconds; two dashes": {
-			args:     []string{"--duration", "1500ms"},
-			postArgs: []string{},
-			want:     1500 * time.Millisecond,
 		},
 		"Args after value; two dashes": {
 			args:     []string{"--duration", "1h", "foo", "bar"},
@@ -102,43 +118,75 @@ func TestParseSingleDashDurationOption(t *testing.T) {
 			og := opts.NewGroup("test-parsing")
 			og.Duration(&got, "duration", 0)
 
-			err := og.Parse(tc.args)
+			remaining, err := og.ParseKnown(tc.args)
 			if err != nil {
-				t.Fatalf("after err := og.Parse(%v), err == %v; want nil", tc.args, err)
+				t.Fatalf("og.ParseKnown(%v) returns %v as err; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("after og.Parse(%v), got = %v; want %v", tc.args, got, tc.want)
+				t.Errorf("og.ParseKnown(%v) assigns %v to got; want %v", tc.args, got, tc.want)
 			}
 
-			postArgs := og.Args()
-			if diff := cmp.Diff(tc.postArgs, postArgs); diff != "" {
-				t.Errorf("after og.Parse(%v); (-want +got):\n%s", tc.args, diff)
+			if diff := cmp.Diff(tc.postArgs, remaining); diff != "" {
+				t.Errorf("og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
 			}
 		})
 	}
 }
 
-func TestParseDurationErrors(t *testing.T) {
+func TestParseDurationSimpleErrors(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		errWanted error
+		args      []string
+	}{
+		"No value; single dash": {
+			args:      []string{"-duration"},
+			errWanted: opts.ErrMissingValue,
+		},
+		"No value; double dash": {
+			args:      []string{"--duration"},
+			errWanted: opts.ErrMissingValue,
+		},
+		"Equals without value": {
+			args:      []string{"--duration="},
+			errWanted: opts.ErrMissingValue,
+		},
+		"Unknown option": {
+			args:      []string{"-foo=1h"},
+			errWanted: opts.ErrUnknownOption,
+		},
+	}
+
+	for msg, tc := range testCases {
+		t.Run(msg, func(t *testing.T) {
+			t.Parallel()
+
+			var got time.Duration
+			og := opts.NewGroup("test-parsing")
+			og.Duration(&got, "d", 0)
+			og.Duration(&got, "duration", 0)
+
+			err := og.Parse(tc.args)
+			if !errors.Is(err, tc.errWanted) {
+				t.Errorf("og.Parse(%v), got %v; want %v", tc.args, err, tc.errWanted)
+			}
+		})
+	}
+}
+
+func TestParseDurationInvalidValueErrors(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
 		args []string
 	}{
-		"No value; single dash": {
-			args: []string{"-duration"},
-		},
-		"No value; double dash": {
-			args: []string{"--duration"},
-		},
 		"Invalid value; single dash": {
 			args: []string{"-duration", "xyz"},
 		},
 		"Invalid value; double dash": {
 			args: []string{"--duration", "xyz"},
-		},
-		"Equals without value": {
-			args: []string{"--duration="},
 		},
 		"Equals with invalid value": {
 			args: []string{"--duration=xyz"},
@@ -158,9 +206,6 @@ func TestParseDurationErrors(t *testing.T) {
 		"Double dash, multiple equals": {
 			args: []string{"--duration=1h=2h"},
 		},
-		"Unregistered option": {
-			args: []string{"-foo=1h"},
-		},
 	}
 
 	for msg, tc := range testCases {
@@ -173,8 +218,10 @@ func TestParseDurationErrors(t *testing.T) {
 			og.Duration(&got, "duration", 0)
 
 			err := og.Parse(tc.args)
-			if err == nil {
-				t.Errorf("after og.Parse(%v), err == nil; want error", tc.args)
+			var ive *opts.InvalidValueError
+
+			if !errors.As(err, &ive) {
+				t.Errorf("og.Parse(%v) returns %T; want InvalidValueError", tc.args, err)
 			}
 		})
 	}

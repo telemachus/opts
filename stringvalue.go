@@ -10,7 +10,7 @@ func (g *Group) String(s *string, name, defValue string) {
 	}
 
 	*s = defValue
-	opt := &Opt{
+	opt := &opt{
 		value: &value[string]{
 			ptr:     s,
 			convert: toString,

@@ -1,14 +1,15 @@
 package opts
 
-// Opt encapsulates a single option.
-type Opt struct {
+// An opt stores a single option.
+type opt struct {
 	value  setter
 	name   string
 	isBool bool
 }
 
 // Options implement the setter interface, parsing a given string and assigning
-// its value to a pointer or returning an error if parsing fails.
+// its value to a pointer of the option's type or returning an error if parsing
+// fails.
 type setter interface {
 	set(string) error
 }
@@ -31,7 +32,7 @@ func (v *value[T]) set(s string) error {
 
 // Group stores and manages a set of options.
 type Group struct {
-	opts   map[string]*Opt
+	opts   map[string]*opt
 	name   string
 	args   []string
 	parsed bool
@@ -41,7 +42,7 @@ type Group struct {
 func NewGroup(name string) *Group {
 	return &Group{
 		name: name,
-		opts: make(map[string]*Opt, 10),
+		opts: make(map[string]*opt, 10),
 	}
 }
 

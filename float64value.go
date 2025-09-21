@@ -14,7 +14,7 @@ func (g *Group) Float64(f *float64, name string, defValue float64) {
 	}
 
 	*f = defValue
-	opt := &Opt{
+	opt := &opt{
 		value: &value[float64]{
 			ptr:     f,
 			convert: toFloat64,
