@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/telemachus/opts"
 )
 
@@ -34,13 +33,13 @@ func TestParseBool(t *testing.T) {
 			og.Bool(&got, "v")
 			og.Bool(&got, "verbose")
 
-			err := og.Parse(tc.args)
+			err := og.ParseAll(tc.args)
 			if err != nil {
-				t.Fatalf("og.Parse(%v) returns %v as err; want nil", tc.args, err)
+				t.Fatalf("og.ParseAll(%v) returns %v as err; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("og.Parse(%v) assigns %t to got; want %t", tc.args, got, tc.want)
+				t.Errorf("og.ParseAll(%v) assigns %t to got; want %t", tc.args, got, tc.want)
 			}
 		})
 	}
@@ -75,18 +74,16 @@ func TestParseBoolWithRemainingArgs(t *testing.T) {
 			og.Bool(&got, "v")
 			og.Bool(&got, "verbose")
 
-			remaining, err := og.ParseKnown(tc.args)
+			remaining, err := og.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("og.ParseKnown(%v) returns %v as err; want nil", tc.args, err)
+				t.Fatalf("og.Parse(%v) returns %v as err; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("og.ParseKnown(%v) assigns %t to got; want %t", tc.args, got, tc.want)
+				t.Errorf("og.Parse(%v) assigns %t to got; want %t", tc.args, got, tc.want)
 			}
 
-			if diff := cmp.Diff(tc.postArgs, remaining); diff != "" {
-				t.Errorf("og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
-			}
+			checkRemaining(t, "Parse", tc.args, tc.postArgs, remaining)
 		})
 	}
 }
@@ -128,16 +125,16 @@ func TestParseBoolErrors(t *testing.T) {
 			og := opts.NewGroup("test-parsing")
 			og.Bool(&got, "verbose")
 
-			err := og.Parse(tc.args)
+			err := og.ParseAll(tc.args)
 			if !errors.Is(err, tc.errWanted) {
-				t.Errorf("og.Parse(%v) returns %v as err; want %v", tc.args, err, tc.errWanted)
+				t.Errorf("og.ParseAll(%v) returns %v as err; want %v", tc.args, err, tc.errWanted)
 			}
 
 			og2 := opts.NewGroup("test-parsing")
 			og2.Bool(&got, "verbose")
-			_, err2 := og2.ParseKnown(tc.args)
+			_, err2 := og2.Parse(tc.args)
 			if !errors.Is(err2, tc.errWanted) {
-				t.Errorf("og.Parse(%v) returns %v as err; want %v", tc.args, err2, tc.errWanted)
+				t.Errorf("og.ParseAll(%v) returns %v as err; want %v", tc.args, err2, tc.errWanted)
 			}
 		})
 	}

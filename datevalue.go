@@ -11,24 +11,7 @@ import (
 // format (e.g., "2025-12-31" or "2024-02-29"). See [civil.ParseDate] for
 // details.
 func (g *Group) Date(d *civil.Date, name string, defValue civil.Date) {
-	if err := validateName("Date", name); err != nil {
-		panic(err)
-	}
-
-	*d = defValue
-	opt := &opt{
-		value: &value[civil.Date]{
-			ptr:     d,
-			convert: civil.ParseDate,
-		},
-		name:   name,
-		isBool: false,
-	}
-
-	if err := g.optAlreadySet(name); err != nil {
-		panic(err)
-	}
-	g.opts[name] = opt
+	define(g, "Date", d, name, defValue, civil.ParseDate)
 }
 
 // DateZero is like Date but it defaults to a zero value. NB: the zero value

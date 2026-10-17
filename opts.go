@@ -2,16 +2,16 @@ package opts
 
 // An opt stores a single option.
 type opt struct {
-	value  setter
-	name   string
+	value  preparer
 	isBool bool
 }
 
-// Options implement the setter interface, parsing a given string and assigning
-// its value to a pointer of the option's type or returning an error if parsing
-// fails.
-type setter interface {
-	set(string) error
+// Options implement the preparer interface, parsing a given string and
+// returning a function that assigns the parsed value to a pointer of the
+// option's type, or returning an error if parsing fails. Nothing is assigned
+// until the caller runs the returned function.
+type preparer interface {
+	prepare(s string) (func(), error)
 }
 
 type value[T any] struct {
@@ -19,22 +19,19 @@ type value[T any] struct {
 	convert func(string) (T, error)
 }
 
-func (v *value[T]) set(s string) error {
+func (v *value[T]) prepare(s string) (func(), error) {
 	val, err := v.convert(s)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	*v.ptr = val
-
-	return nil
+	return func() { *v.ptr = val }, nil
 }
 
 // Group stores and manages a set of options.
 type Group struct {
 	opts   map[string]*opt
 	name   string
-	args   []string
 	parsed bool
 }
 

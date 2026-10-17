@@ -28,19 +28,24 @@ func TestOptRegistrationInvalid(t *testing.T) {
 	testCases := map[string]struct {
 		name string
 	}{
-		"empty name":         {name: ""},
-		"whitespace":         {name: " hello"},
-		"equal sign":         {name: "hello=world"},
-		"tab":                {name: "hello\tworld"},
-		"newline":            {name: "hello\nworld"},
-		"null byte":          {name: "hello\u0000world"},
-		"null rune":          {name: "hello\x00world"},
-		"initial dash":       {name: "-hello"},
-		"backslash":          {name: `hello\world`},
-		"single quote":       {name: "hello'world"},
-		"double quote":       {name: `hello"world`},
-		"backtick":           {name: "hello`world"},
-		"unicode whitespace": {name: "hello\u00A0world"},
+		"empty name":              {name: ""},
+		"whitespace":              {name: " hello"},
+		"equal sign":              {name: "hello=world"},
+		"tab":                     {name: "hello\tworld"},
+		"newline":                 {name: "hello\nworld"},
+		"null byte":               {name: "hello\u0000world"},
+		"null rune":               {name: "hello\x00world"},
+		"initial dash":            {name: "-hello"},
+		"backslash":               {name: `hello\world`},
+		"single quote":            {name: "hello'world"},
+		"double quote":            {name: `hello"world`},
+		"backtick":                {name: "hello`world"},
+		"unicode whitespace":      {name: "hello\u00A0world"},
+		"other control character": {name: "hello\x01world"},
+		"delete":                  {name: "hello\x7fworld"},
+		"next line (NEL)":         {name: "hello\u0085world"},
+		"line separator":          {name: "hello\u2028world"},
+		"ideographic space":       {name: "hello\u3000world"},
 	}
 
 	for name, tc := range testCases {
@@ -51,6 +56,35 @@ func TestOptRegistrationInvalid(t *testing.T) {
 			defer func() {
 				if r := recover(); r == nil {
 					t.Error("expected panic on invalid name")
+				}
+			}()
+			var got bool
+			og.Bool(&got, tc.name)
+		})
+	}
+}
+
+func TestOptRegistrationValid(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		name string
+	}{
+		"single letter":      {name: "h"},
+		"internal dash":      {name: "dry-run"},
+		"digits":             {name: "v2"},
+		"non-ASCII letters":  {name: "café"},
+		"underscore and dot": {name: "log_level.max"},
+	}
+
+	for msg, tc := range testCases {
+		t.Run(msg, func(t *testing.T) {
+			t.Parallel()
+
+			og := opts.NewGroup("test-optiongroup")
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("og.Bool(&got, %q) panics with %v; want no panic", tc.name, r)
 				}
 			}()
 			var got bool
@@ -151,5 +185,26 @@ func TestDuplicateOptRegistration(t *testing.T) {
 			}()
 			tc.second(og)
 		})
+	}
+}
+
+func TestDuplicateOptRegistrationKeepsValue(t *testing.T) {
+	t.Parallel()
+
+	var count int
+	og := opts.NewGroup("test-optiongroup")
+	og.Int(&count, "count", 1)
+
+	func() {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Error("expected panic on duplicate registration")
+			}
+		}()
+		og.Int(&count, "count", 2)
+	}()
+
+	if count != 1 {
+		t.Errorf("duplicate og.Int(&count, %q, 2) changes count to %d; want 1", "count", count)
 	}
 }

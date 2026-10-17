@@ -11,24 +11,7 @@ import (
 // time.Duration format (e.g., "500ms" or "4h15m18s"). See [time.ParseDuration]
 // for details.
 func (g *Group) Duration(d *time.Duration, name string, defValue time.Duration) {
-	if err := validateName("Duration", name); err != nil {
-		panic(err)
-	}
-
-	*d = defValue
-	opt := &opt{
-		value: &value[time.Duration]{
-			ptr:     d,
-			convert: time.ParseDuration,
-		},
-		name:   name,
-		isBool: false,
-	}
-
-	if err := g.optAlreadySet(name); err != nil {
-		panic(err)
-	}
-	g.opts[name] = opt
+	define(g, "Duration", d, name, defValue, time.ParseDuration)
 }
 
 // DurationZero is like Duration but with a default value of 0.

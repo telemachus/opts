@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/telemachus/opts"
 )
 
@@ -35,6 +34,14 @@ func TestParseInt(t *testing.T) {
 			args: []string{"--number", "-42"},
 			want: -42,
 		},
+		"Leading zero is decimal; single dash": {
+			args: []string{"-n", "0644"},
+			want: 644,
+		},
+		"Leading zero is decimal; double dash": {
+			args: []string{"--number=-010"},
+			want: -10,
+		},
 	}
 
 	for msg, tc := range testCases {
@@ -46,13 +53,13 @@ func TestParseInt(t *testing.T) {
 			og.Int(&got, "n", 0)
 			og.Int(&got, "number", 0)
 
-			err := og.Parse(tc.args)
+			err := og.ParseAll(tc.args)
 			if err != nil {
-				t.Fatalf("og.Parse(%v) returns err == %v; want nil", tc.args, err)
+				t.Fatalf("og.ParseAll(%v) returns err == %v; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("og.Parse(%v) assigns %d to got; want %d", tc.args, got, tc.want)
+				t.Errorf("og.ParseAll(%v) assigns %d to got; want %d", tc.args, got, tc.want)
 			}
 		})
 	}
@@ -87,18 +94,16 @@ func TestParseIntWithRemainingArgs(t *testing.T) {
 			og.Int(&got, "n", 0)
 			og.Int(&got, "number", 0)
 
-			remaining, err := og.ParseKnown(tc.args)
+			remaining, err := og.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("og.ParseKnown(%v) returns err == %v; want nil", tc.args, err)
+				t.Fatalf("og.Parse(%v) returns err == %v; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("og.ParseKnown(%v) assigns %d to got; want %d", tc.args, got, tc.want)
+				t.Errorf("og.Parse(%v) assigns %d to got; want %d", tc.args, got, tc.want)
 			}
 
-			if diff := cmp.Diff(tc.postArgs, remaining); diff != "" {
-				t.Errorf("og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
-			}
+			checkRemaining(t, "Parse", tc.args, tc.postArgs, remaining)
 		})
 	}
 }
@@ -145,9 +150,9 @@ func TestParseIntSimpleErrors(t *testing.T) {
 			og.Int(&got, "n", 0)
 			og.Int(&got, "number", 0)
 
-			err := og.Parse(tc.args)
+			err := og.ParseAll(tc.args)
 			if !errors.Is(err, tc.errWanted) {
-				t.Fatalf("og.Parse(%v) returns err == %v; want %v", tc.args, err, tc.errWanted)
+				t.Fatalf("og.ParseAll(%v) returns err == %v; want %v", tc.args, err, tc.errWanted)
 			}
 		})
 	}
@@ -178,6 +183,18 @@ func TestParseIntErrors(t *testing.T) {
 		"Double dash, multiple equals": {
 			args: []string{"--number=42=13"},
 		},
+		"Single dash, hex value": {
+			args: []string{"-n", "0xff"},
+		},
+		"Double dash, octal prefix": {
+			args: []string{"--number=0o17"},
+		},
+		"Double dash, binary prefix": {
+			args: []string{"--number=0b1"},
+		},
+		"Single dash, underscore separator": {
+			args: []string{"-n", "1_000"},
+		},
 	}
 
 	for msg, tc := range testCases {
@@ -189,10 +206,9 @@ func TestParseIntErrors(t *testing.T) {
 			og.Int(&got, "n", 0)
 			og.Int(&got, "number", 0)
 
-			err := og.Parse(tc.args)
-			var ive *opts.InvalidValueError
-			if !errors.As(err, &ive) {
-				t.Fatalf("Parse(%v) returns %T; want InvalidValueError", tc.args, err)
+			err := og.ParseAll(tc.args)
+			if _, ok := errors.AsType[*opts.InvalidValueError](err); !ok {
+				t.Fatalf("ParseAll(%v) returns %T; want InvalidValueError", tc.args, err)
 			}
 		})
 	}

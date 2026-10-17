@@ -2,68 +2,73 @@ package opts
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
 // Parse scans args and sets option values defined in the [Group].
 //
 // Parse should be called after all options are defined and before any option
-// values are used. Parse performs strict parsing. If any positional arguments
-// remain after parsing stops, then Parse will return  [*UnexpectedArgsError].
-// If Parse returns without error, the Group is considered parsed and
-// subsequent calls to Parse will return [ErrAlreadyParsed].
+// values are used. If Parse returns without error, the Group is considered
+// parsed and subsequent calls to Parse or [Group.ParseAll] will return
+// [ErrAlreadyParsed].
 //
-// Parsing stops at the first non-option argument. Any remaining arguments can
-// be accessed via the returned slice of strings. Both '-' and '--' are
-// considered non-option arguments, and both stop further parsing. However,
-// the returned slice will not contain '--', but it will contain '-'. (By
-// convention, many programs treat '-' as stdin, but that is up to the calling
-// program to decide and handle.)
+// Parsing stops at the first non-option argument. Parse returns any remaining
+// arguments as a new slice, which does not share memory with args. Both '-'
+// and '--' are considered non-option arguments, and both stop further
+// parsing. However, the returned slice will not contain '--', but it will
+// contain '-'. (By convention, many programs treat '-' as stdin, but that is
+// up to the calling program to decide and handle.)
 //
 // If Parse encounters an unknown option, an option without a value, or a value
 // that cannot be parsed as its type, it returns an error and the Group remains
-// unparsed. The caller may retry with different arguments.
+// unparsed. No option values are changed, and the caller may retry with
+// different arguments.
 //
 // The slice passed to Parse should not include the program name. If using
 // `os.Args` directly, the caller should pass `os.Args[1:]`.
 //
-// Use Parse if your program should not accept leftover arguments.
-func (g *Group) Parse(args []string) error {
+// Use Parse if your program accepts positional arguments after the options.
+func (g *Group) Parse(args []string) ([]string, error) {
+	if g.parsed {
+		return nil, fmt.Errorf("opts: option group %q: %w", g.name, ErrAlreadyParsed)
+	}
+
+	pa, err := g.prepare(args)
+	if err != nil {
+		return nil, err
+	}
+
+	pa.assign()
+	g.parsed = true
+
+	return slices.Clone(pa.rest), nil
+}
+
+// ParseAll is like [Group.Parse], except that it requires every argument to be
+// an option. If any positional arguments remain after parsing stops, ParseAll
+// returns [*UnexpectedArgumentsError]. In that case, as with any other error,
+// no option values are changed and the Group remains unparsed.
+//
+// Use ParseAll if your program does not accept positional arguments.
+func (g *Group) ParseAll(args []string) error {
 	if g.parsed {
 		return fmt.Errorf("opts: option group %q: %w", g.name, ErrAlreadyParsed)
 	}
 
-	err := g.parse(args)
+	pa, err := g.prepare(args)
 	if err != nil {
 		return err
 	}
 
-	if len(g.args) > 0 {
-		return &UnexpectedArgumentsError{Args: g.args}
+	if len(pa.rest) > 0 {
+		return &UnexpectedArgumentsError{Args: slices.Clone(pa.rest)}
 	}
 
+	pa.assign()
 	g.parsed = true
 
 	return nil
-}
-
-// ParseKnown is like Parse in all ways but one: it allows arguments to remain
-// after parsing stops and thus never returns UnexpectedArgsError.
-//
-// Use ParseKnown if your program expects leftover arguments.
-func (g *Group) ParseKnown(args []string) ([]string, error) {
-	if g.parsed {
-		return []string{}, fmt.Errorf("opts: option group %q: %w", g.name, ErrAlreadyParsed)
-	}
-
-	err := g.parse(args)
-	if err != nil {
-		return []string{}, err
-	}
-
-	g.parsed = true
-
-	return g.args, nil
 }
 
 type argType int
@@ -96,118 +101,100 @@ func classifyArg(arg string) argType {
 	}
 }
 
-func (g *Group) shouldStopParsing(arg string, remainingArgs []string) bool {
-	switch classifyArg(arg) {
-	case argEmpty, argNoDash, argSingleDash:
-		// Stop parsing and keep arg in g.args.
-		return true
-	case argDoubleDash:
-		// Stop parsing but drop "--" from g.args.
-		g.args = remainingArgs
-		return true
-	default:
-		// Keep parsing and don't change g.args.
-		return false
+// preparedArgs holds the result of preparing args: the arguments left when
+// parsing stops and, in order, one function per option that assigns that
+// option's value.
+type preparedArgs struct {
+	rest        []string
+	assignments []func()
+}
+
+func (pa preparedArgs) assign() {
+	for _, assign := range pa.assignments {
+		assign()
 	}
 }
 
-func (g *Group) parseByArgType(arg string, args []string) ([]string, error) {
-	switch classifyArg(arg) {
-	case argSingleDashOpt:
-		return g.parseOpt(arg[1:], args)
-	case argDoubleDashOpt:
-		return g.parseOpt(arg[2:], args)
-	default:
-		panic(fmt.Sprintf("opts: internal error: impossible arg %q", arg))
-	}
-}
-
-func (g *Group) parse(args []string) error {
-	g.args = args
+// prepare scans args without assigning any values.
+func (g *Group) prepare(args []string) (preparedArgs, error) {
+	var assignments []func()
 
 	for len(args) > 0 {
 		arg := args[0]
-		args = args[1:]
 
-		if g.shouldStopParsing(arg, args) {
-			return nil
+		var optPrefix string
+		switch classifyArg(arg) {
+		case argEmpty, argNoDash, argSingleDash:
+			// Stop parsing and keep arg.
+			return preparedArgs{rest: args, assignments: assignments}, nil
+		case argDoubleDash:
+			// Stop parsing but drop "--".
+			return preparedArgs{rest: args[1:], assignments: assignments}, nil
+		case argSingleDashOpt:
+			optPrefix = arg[:1]
+		case argDoubleDashOpt:
+			optPrefix = arg[:2]
 		}
 
-		var err error
-		args, err = g.parseByArgType(arg, args)
+		optArg := arg[len(optPrefix):]
+		if strings.HasPrefix(optArg, "=") {
+			// With no name before "=", report the whole argument.
+			return preparedArgs{}, fmt.Errorf("opts: %w %q", ErrUnknownOption, arg)
+		}
+
+		rest, assign, err := g.parseOpt(optPrefix, optArg, args[1:])
 		if err != nil {
-			return err
+			return preparedArgs{}, err
 		}
 
-		g.args = args
+		assignments = append(assignments, assign)
+		args = rest
 	}
 
-	return nil
+	return preparedArgs{rest: args, assignments: assignments}, nil
 }
 
-func (g *Group) parseOpt(arg string, args []string) ([]string, error) {
+// parseOpt parses one option. optPrefix is the single or double dash before
+// the option, and arg is the rest of it. Errors show the option as the user
+// typed it. If the value is the next argument, parseOpt consumes it from args.
+func (g *Group) parseOpt(optPrefix, arg string, args []string) ([]string, func(), error) {
 	name, value, eqFound := strings.Cut(arg, "=")
 
 	opt, ok := g.opts[name]
 	if !ok {
-		return nil, fmt.Errorf("opts: --%s: %w", name, ErrUnknownOption)
+		return nil, nil, fmt.Errorf("opts: %w %q", ErrUnknownOption, optPrefix+name)
 	}
-
-	if eqFound {
-		return parseEquals(opt, name, value, arg, args)
-	}
-
-	return parseSpaced(opt, name, args)
-}
-
-func parseEquals(opt *opt, name, value, arg string, args []string) ([]string, error) {
-	if opt.isBool {
-		return nil, fmt.Errorf("opts: --%s=%s: %w", name, value, ErrBooleanWithValue)
-	}
-
-	if err := opt.value.set(value); err != nil {
-		// Distinguish no value from a bad value.
-		if value == "" {
-			return nil, fmt.Errorf("opts: --%s=: %w", name, ErrMissingValue)
-		}
-
-		return nil, &InvalidValueError{
-			Option: name,
-			Value:  value,
-			Err:    err,
-		}
-	}
-
-	// A string option `--foo=` will not produce an error when calling set.
-	// `--foo=` amounts to `--foo=""`, and the empty string is a valid
-	// string value. However, for consistency with other option types, we
-	// should return an error indicating that there is no value.
-	if value == "" && arg[len(arg)-1] == '=' {
-		return nil, fmt.Errorf("opts: --%s=: %w", name, ErrMissingValue)
-	}
-
-	return args, nil
-}
-
-func parseSpaced(opt *opt, name string, args []string) ([]string, error) {
-	var value string
 
 	switch {
 	case opt.isBool:
+		if eqFound {
+			return nil, nil, fmt.Errorf("opts: %w %q", ErrBooleanWithValue, optPrefix+name)
+		}
+
 		value = "true"
+	case eqFound:
+		// The value came after "=".
 	case len(args) > 0:
 		value, args = args[0], args[1:]
 	default:
-		return nil, fmt.Errorf("opts: --%s: %w", name, ErrMissingValue)
+		return nil, nil, fmt.Errorf("opts: %w for %q", ErrMissingValue, optPrefix+name)
 	}
 
-	if err := opt.value.set(value); err != nil {
-		return nil, &InvalidValueError{
-			Option: name,
-			Value:  value,
-			Err:    err,
+	assign, err := opt.value.prepare(value)
+	if err != nil {
+		// Distinguish no value from a bad value. A string option accepts
+		// `--foo=` as the empty string, as it accepts `--foo ""`.
+		if eqFound && value == "" {
+			return nil, nil, fmt.Errorf("opts: %w for %q", ErrMissingValue, optPrefix+name+"=")
+		}
+
+		return nil, nil, &InvalidValueError{
+			Option:    name,
+			Value:     value,
+			Err:       err,
+			optPrefix: optPrefix,
 		}
 	}
 
-	return args, nil
+	return args, assign, nil
 }

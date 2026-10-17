@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/telemachus/opts"
 )
 
@@ -78,13 +77,13 @@ func TestParseDuration(t *testing.T) {
 			og := opts.NewGroup("test-parsing")
 			og.Duration(&got, "duration", 0)
 
-			err := og.Parse(tc.args)
+			err := og.ParseAll(tc.args)
 			if err != nil {
-				t.Fatalf("og.Parse(%v) returns %v as err; want nil", tc.args, err)
+				t.Fatalf("og.ParseAll(%v) returns %v as err; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("og.Parse(%v) assigns %v to got; want %v", tc.args, got, tc.want)
+				t.Errorf("og.ParseAll(%v) assigns %v to got; want %v", tc.args, got, tc.want)
 			}
 		})
 	}
@@ -118,18 +117,16 @@ func TestParseDurationWithRemainingArgs(t *testing.T) {
 			og := opts.NewGroup("test-parsing")
 			og.Duration(&got, "duration", 0)
 
-			remaining, err := og.ParseKnown(tc.args)
+			remaining, err := og.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("og.ParseKnown(%v) returns %v as err; want nil", tc.args, err)
+				t.Fatalf("og.Parse(%v) returns %v as err; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("og.ParseKnown(%v) assigns %v to got; want %v", tc.args, got, tc.want)
+				t.Errorf("og.Parse(%v) assigns %v to got; want %v", tc.args, got, tc.want)
 			}
 
-			if diff := cmp.Diff(tc.postArgs, remaining); diff != "" {
-				t.Errorf("og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
-			}
+			checkRemaining(t, "Parse", tc.args, tc.postArgs, remaining)
 		})
 	}
 }
@@ -168,9 +165,9 @@ func TestParseDurationSimpleErrors(t *testing.T) {
 			og.Duration(&got, "d", 0)
 			og.Duration(&got, "duration", 0)
 
-			err := og.Parse(tc.args)
+			err := og.ParseAll(tc.args)
 			if !errors.Is(err, tc.errWanted) {
-				t.Errorf("og.Parse(%v), got %v; want %v", tc.args, err, tc.errWanted)
+				t.Errorf("og.ParseAll(%v), got %v; want %v", tc.args, err, tc.errWanted)
 			}
 		})
 	}
@@ -217,11 +214,9 @@ func TestParseDurationInvalidValueErrors(t *testing.T) {
 			og.Duration(&got, "d", 0)
 			og.Duration(&got, "duration", 0)
 
-			err := og.Parse(tc.args)
-			var ive *opts.InvalidValueError
-
-			if !errors.As(err, &ive) {
-				t.Errorf("og.Parse(%v) returns %T; want InvalidValueError", tc.args, err)
+			err := og.ParseAll(tc.args)
+			if _, ok := errors.AsType[*opts.InvalidValueError](err); !ok {
+				t.Errorf("og.ParseAll(%v) returns %T; want InvalidValueError", tc.args, err)
 			}
 		})
 	}

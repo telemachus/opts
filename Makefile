@@ -1,36 +1,34 @@
 .DEFAULT_GOAL := test
 
 fmt:
-	golangci-lint run --disable-all --no-config -Egofmt --fix
-	golangci-lint run --disable-all --no-config -Egofumpt --fix
+	golangci-lint fmt --no-config -Egofumpt
 
-staticcheck: fmt
-	staticcheck .
+staticcheck:
+	staticcheck ./...
 
-revive: fmt
+revive:
 	revive -config revive.toml ./...
 
-golangci: fmt
+golangci:
 	golangci-lint run
 
-lint: fmt staticcheck revive golangci
+lint: staticcheck revive golangci
 
-test:
-	go test -shuffle on
-
-testv:
-	go test -shuffle on -v
-
-testr:
-	go test -race -shuffle on
-
-build: lint testr
+build: testr lint
 	go build .
 
-install: build
-	go install .
+test:
+	go test -shuffle on .
+
+testr:
+	go test -race -shuffle on .
+
+testv:
+	go test -shuffle on -v .
 
 clean:
-	go clean -i -r -cache
+	go clean
 
-.PHONY: fmt staticcheck revive golangci lint build install test testv testr clean
+.PHONY: fmt staticcheck revive golangci lint
+.PHONY: test testv testr
+.PHONY: build clean

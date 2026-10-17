@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/telemachus/opts"
 )
 
@@ -51,6 +50,18 @@ func TestParseFloat64(t *testing.T) {
 			args: []string{"--value", "-3.14"},
 			want: -3.14,
 		},
+		"Scientific notation without sign; double dash": {
+			args: []string{"--value=1e3"},
+			want: 1000.0,
+		},
+		"No leading digit; single dash": {
+			args: []string{"-x", ".5"},
+			want: 0.5,
+		},
+		"Explicit plus sign; double dash": {
+			args: []string{"--value", "+3"},
+			want: 3.0,
+		},
 	}
 
 	for msg, tc := range testCases {
@@ -62,13 +73,13 @@ func TestParseFloat64(t *testing.T) {
 			og.Float64(&got, "x", 0.0)
 			og.Float64(&got, "value", 0.0)
 
-			err := og.Parse(tc.args)
+			err := og.ParseAll(tc.args)
 			if err != nil {
-				t.Fatalf("og.Parse(%v) returns %v as err; want nil", tc.args, err)
+				t.Fatalf("og.ParseAll(%v) returns %v as err; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("og.Parse(%v) assigns %g to got; want %g", tc.args, got, tc.want)
+				t.Errorf("og.ParseAll(%v) assigns %g to got; want %g", tc.args, got, tc.want)
 			}
 		})
 	}
@@ -103,18 +114,16 @@ func TestParseFloat64WithRemainingArgs(t *testing.T) {
 			og.Float64(&got, "x", 0.0)
 			og.Float64(&got, "value", 0.0)
 
-			remaining, err := og.ParseKnown(tc.args)
+			remaining, err := og.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("og.ParseKnown(%v) returns %v as err; want nil", tc.args, err)
+				t.Fatalf("og.Parse(%v) returns %v as err; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("og.ParseKnown(%v) assigns %g to got; want %g", tc.args, got, tc.want)
+				t.Errorf("og.Parse(%v) assigns %g to got; want %g", tc.args, got, tc.want)
 			}
 
-			if diff := cmp.Diff(tc.postArgs, remaining); diff != "" {
-				t.Errorf("og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
-			}
+			checkRemaining(t, "Parse", tc.args, tc.postArgs, remaining)
 		})
 	}
 }
@@ -149,9 +158,9 @@ func TestParseFloat64ErrMissingValue(t *testing.T) {
 			og.Float64(&got, "x", 0.0)
 			og.Float64(&got, "value", 0.0)
 
-			err := og.Parse(tc.args)
+			err := og.ParseAll(tc.args)
 			if !errors.Is(err, opts.ErrMissingValue) {
-				t.Fatalf("og.Parse(%v) returns %v as err; want %v", tc.args, err, opts.ErrMissingValue)
+				t.Fatalf("og.ParseAll(%v) returns %v as err; want %v", tc.args, err, opts.ErrMissingValue)
 			}
 		})
 	}
@@ -178,6 +187,21 @@ func TestParseFloat64InvalidValueError(t *testing.T) {
 		"Double dash, multiple equals": {
 			args: []string{"--value=3.14=2.718"},
 		},
+		"Single dash, NaN": {
+			args: []string{"-x", "NaN"},
+		},
+		"Double dash, lowercase inf": {
+			args: []string{"--value=inf"},
+		},
+		"Single dash, negative infinity": {
+			args: []string{"-x", "-Infinity"},
+		},
+		"Double dash, hex float": {
+			args: []string{"--value", "0x1p4"},
+		},
+		"Single dash, underscore separator": {
+			args: []string{"-x", "1_000.5"},
+		},
 	}
 
 	for msg, tc := range testCases {
@@ -189,11 +213,9 @@ func TestParseFloat64InvalidValueError(t *testing.T) {
 			og.Float64(&got, "x", 0.0)
 			og.Float64(&got, "value", 0.0)
 
-			err := og.Parse(tc.args)
-			var ive *opts.InvalidValueError
-
-			if !errors.As(err, &ive) {
-				t.Fatalf("og.Parse(%v) returns %T; want *opts.InvalidValueError", tc.args, err)
+			err := og.ParseAll(tc.args)
+			if _, ok := errors.AsType[*opts.InvalidValueError](err); !ok {
+				t.Fatalf("og.ParseAll(%v) returns %T; want *opts.InvalidValueError", tc.args, err)
 			}
 		})
 	}

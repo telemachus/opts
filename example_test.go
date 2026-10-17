@@ -1,8 +1,10 @@
-package opts
+package opts_test
 
 import (
 	"fmt"
 	"os"
+
+	"github.com/telemachus/opts"
 )
 
 func Example_typical() {
@@ -14,7 +16,7 @@ func Example_typical() {
 		write      bool
 	}{}
 
-	og := NewGroup("caser")
+	og := opts.NewGroup("caser")
 	og.String(&cfg.rcfile, "rcfile", "caser.ini")
 	og.String(&cfg.convention, "convention", "camel")
 	og.Uint(&cfg.strictness, "strictness", 3)
@@ -22,7 +24,7 @@ func Example_typical() {
 	og.Bool(&cfg.write, "write")
 
 	args := []string{"--strictness", "5", "--dry-run", "--", "-awful-filename.txt", "file2.go"}
-	remaining, err := og.ParseKnown(args)
+	remaining, err := og.Parse(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "problem parsing args (%v): %v\n", args, err)
 	}

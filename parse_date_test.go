@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"cloud.google.com/go/civil"
-	"github.com/google/go-cmp/cmp"
 	"github.com/telemachus/opts"
 )
 
@@ -59,13 +58,13 @@ func TestParseDate(t *testing.T) {
 			og.Date(&got, "d", civil.Date{})
 			og.Date(&got, "date", civil.Date{})
 
-			err := og.Parse(tc.args)
+			err := og.ParseAll(tc.args)
 			if err != nil {
-				t.Fatalf("og.Parse(%v) returns %v as err; want nil", tc.args, err)
+				t.Fatalf("og.ParseAll(%v) returns %v as err; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("og.Parse(%v) assigns %v to got; want %v", tc.args, got, tc.want)
+				t.Errorf("og.ParseAll(%v) assigns %v to got; want %v", tc.args, got, tc.want)
 			}
 		})
 	}
@@ -100,18 +99,16 @@ func TestParseDateWithRemainingArgs(t *testing.T) {
 			og.Date(&got, "d", civil.Date{})
 			og.Date(&got, "date", civil.Date{})
 
-			remaining, err := og.ParseKnown(tc.args)
+			remaining, err := og.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("og.ParseKnown(%v) returns %v as err; want nil", tc.args, err)
+				t.Fatalf("og.Parse(%v) returns %v as err; want nil", tc.args, err)
 			}
 
 			if got != tc.want {
-				t.Errorf("og.ParseKnown(%v) assigns %v to got; want %v", tc.args, got, tc.want)
+				t.Errorf("og.Parse(%v) assigns %v to got; want %v", tc.args, got, tc.want)
 			}
 
-			if diff := cmp.Diff(tc.postArgs, remaining); diff != "" {
-				t.Errorf("og.ParseKnown(%v); (-want +got):\n%s", tc.args, diff)
-			}
+			checkRemaining(t, "Parse", tc.args, tc.postArgs, remaining)
 		})
 	}
 }
@@ -150,9 +147,9 @@ func TestParseDateSimpleErrors(t *testing.T) {
 			og.Date(&got, "d", civil.Date{})
 			og.Date(&got, "date", civil.Date{})
 
-			err := og.Parse(tc.args)
+			err := og.ParseAll(tc.args)
 			if !errors.Is(err, tc.errWanted) {
-				t.Errorf("og.Parse(%v) assigns %v to got; want %v", tc.args, err, tc.errWanted)
+				t.Errorf("og.ParseAll(%v) assigns %v to got; want %v", tc.args, err, tc.errWanted)
 			}
 		})
 	}
@@ -221,11 +218,9 @@ func TestParseDateErrors(t *testing.T) {
 			og.Date(&got, "d", civil.Date{})
 			og.Date(&got, "date", civil.Date{})
 
-			err := og.Parse(tc.args)
-			var ive *opts.InvalidValueError
-
-			if !errors.As(err, &ive) {
-				t.Errorf("og.Parse(%v) returns %T; want InvalidValueError", tc.args, err)
+			err := og.ParseAll(tc.args)
+			if _, ok := errors.AsType[*opts.InvalidValueError](err); !ok {
+				t.Errorf("og.ParseAll(%v) returns %T; want InvalidValueError", tc.args, err)
 			}
 		})
 	}

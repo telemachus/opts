@@ -17,31 +17,30 @@ Valid option names must not be empty, must not begin with "-", and must not
 contain whitespace, control characters, quotes, backslashes, or equal signs.
 Option definition methods will panic if a name is invalid.
 
-After all options are defined, Opts provides two methods, [*Group.Parse] and
-[*Group.ParseKnown], to assign values to defined options. Both methods take
-a slice of strings as an argument, and both methods return a slice of strings
-and an error. The slice passed to these methods should contain everything on
-the command line other than the name of the program. In other words, users
-should usually pass os.Args[1:], or its equivalent, to Parse or ParseKnown. The
-slice that the methods return will contain any arguments remaining in the
-original slice after parsing has ended.
+After all options are defined, opts provides two methods, [*Group.Parse] and
+[*Group.ParseAll], to assign values to defined options. Both methods take
+a slice of strings as an argument. Parse returns a slice of strings and an
+error, and ParseAll returns an error. The slice passed to these methods should
+contain everything on the command line other than the name of the program. In
+other words, users should usually pass os.Args[1:], or its equivalent, to Parse
+or ParseAll. The slice that Parse returns will contain any arguments remaining
+in the original slice after parsing has ended.
 
 Both parsing methods will return an error if a user passes an undefined option,
 if a non-boolean option is missing a value, if a boolean option includes
 a value, or if a value cannot be parsed as its type. If a parsing method
 returns without error, then the variables associated with options are ready for
-use. If a parsing method returns an error, then those variables are not safe to
 use.
 
-Parse is strict, returning [ErrUnexpectedArgs] if any non-option arguments
-remain. ParseKnown is relaxed and does not return an error in this situation.
-Both methods return the slice of leftover arguments, but only Parse treats
-a non-empty slice as an error. The relaxed behavior of ParseKnown is necessary
-for programs that accept positional arguments after the options.
+Parse allows positional arguments after the options and returns them. ParseAll
+requires every argument to be an option, returning [*UnexpectedArgumentsError]
+if any positional arguments remain. ParseAll reports the leftover arguments in
+the error's Args field. Use Parse for programs that accept positional arguments
+after the options, and ParseAll for programs that do not.
 
 As an example, imagine a tool that validates and optionally corrects the case
 conventions in one or more files. Since such a tool expects one or more
-filenames after options have been set, it makes sense to use ParseKnown.
+filenames after options have been set, it makes sense to use Parse.
 
 	og := opts.NewGroup("caser")
 
@@ -62,13 +61,13 @@ filenames after options have been set, it makes sense to use ParseKnown.
 	og.Bool(&cfg.write, "write")
 
 	// Later...
-	remaining, err := og.ParseKnown(os.Args[1:])
+	fileNames, err := og.Parse(os.Args[1:])
 	if err != nil {
 		// Handle the error.
 	}
 
 	// If there is no error, the values in cfg are ready to use and
-	// remaining contains the names of files to check.
+	// fileNames contains the names of files to check.
 
 # Command Line Syntax
 
@@ -105,12 +104,15 @@ in scripts.
 
 For most types, it will be clear what a valid string will look like. If an
 opt is a string, int, uint, or float, users will pass the obvious thing. E.g.,
-"something.toml", "0", or "12.3".
+"something.toml", "0", or "12.3". Int, uint, and float options accept only
+decimal numbers. A leading zero does not mean octal, so "010" is 10, and
+prefixes such as "0x" are errors. Float options also reject NaN, Inf, and
+underscores, but they accept exponents, e.g., "1e3".
 
 But it may not be obvious what [Group.Date] and [Group.Duration] consider valid
-or invalid strings. [Group.Date] opts must be in in RFC 3339 full-date format:
+or invalid strings. [Group.Date] opts must be in RFC 3339 full-date format:
 YYYY-MM-DD. E.g., "2025-12-31" or "2024-02-29". [Group.Duration] options must
-be valid [time.Duration] string. E.g., "10ms", "3m2s", or "1h35m9s1ms". For
+be a valid [time.Duration] string. E.g., "10ms", "3m2s", or "1h35m9s1ms". For
 details, see [time.ParseDuration].
 */
 package opts

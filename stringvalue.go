@@ -5,24 +5,7 @@ package opts
 // option. String will panic if name is not valid or repeats an existing
 // option.
 func (g *Group) String(s *string, name, defValue string) {
-	if err := validateName("String", name); err != nil {
-		panic(err)
-	}
-
-	*s = defValue
-	opt := &opt{
-		value: &value[string]{
-			ptr:     s,
-			convert: toString,
-		},
-		name:   name,
-		isBool: false,
-	}
-
-	if err := g.optAlreadySet(name); err != nil {
-		panic(err)
-	}
-	g.opts[name] = opt
+	define(g, "String", s, name, defValue, toString)
 }
 
 // StringZero is like String but with a default value of "".

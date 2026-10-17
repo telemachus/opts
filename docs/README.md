@@ -20,19 +20,22 @@ Valid option names must not be empty, must not begin with "-", and must not
 contain whitespace, control characters, quotes, backslashes, or equal signs.
 Option definition methods will panic if a name is invalid.
 
-After all options are defined, a call to `*Group.Parse` will attempt to assign
-values to options. Parse takes a slice of strings as an argument. This slice
-should contain everything on the command line other than the name of the
-program. In other words, users should usually pass `os.Args[1:]`, or its
-equivalent, to Parse.
+After all options are defined, a call to `*Group.Parse` or `*Group.ParseAll`
+will attempt to assign values to options. These methods take a slice of strings
+as an argument. This slice should contain everything on the command line other
+than the name of the program. In other words, users should usually pass
+`os.Args[1:]`, or its equivalent, to `Parse` or `ParseAll`.
 
-Parse will return an error if a user passes an unknown option, if an option is
-missing a value, or if a value cannot be parsed as its type. If Parse returns
-without error, then the variables associated with options are ready for use. If
-Parse returns an error, then those variables are not safe to use.
+The parsing methods will return an error if a user passes an unknown option, if
+an option is missing a value, or if a value cannot be parsed as its type. If
+a parsing method returns without error, then the variables associated with
+options are ready for use.
 
-Parsing stops at the first non-option argument. After successful parsing,
-`*Group.Args` returns remaining command-line arguments.
+Parsing stops at the first non-option argument. If there are leftover positional
+arguments after parsing stops, `Parse` returns them. On the other hand,
+`ParseAll` returns `*UnexpectedArgumentsError` if there are leftover positional
+arguments after parsing stops. Leftover positional arguments are stored as
+`*UnexpectedArgumentsError.Args` so the caller can inspect or display them.
 
 As a usage example, imagine a tool that validates and optionally corrects the
 case conventions in one or more files.
@@ -57,11 +60,12 @@ og.Bool(&cfg.dryRun, "dry-run")
 og.Bool(&cfg.write, "write")
 
 // Later...
-if err := og.Parse(os.Args[1:]); err != nil {
+fileNames, err := og.Parse(os.Args[1:])
+if err != nil {
 	// Handle the error.
 }
 
-// No error? The values in cfg are safe to use and og.Args() returns everything
+// No error? The values in cfg are safe to use and fileNames contains everything
 // left of os.Args[1:] after parsing stopped.
 ```
 
@@ -109,8 +113,8 @@ Here are some of the key ways that this library is opinionated.
   the library follows `flag` in Go's standard library.)
 + No (traditional) short options and no automatic binding of long and short
   options. The library does not distinguish traditional short options (preceded
-  by a single dash, always one letter and, stackable) from traditional long
-  options (preceded by two dashes, more than one letter, not stackable).
+  by a single dash, always one letter, and stackable) from traditional long
+  options (preceded by two dashes, more than one letter, and not stackable).
   Although users can bind two options to one variable, the library does not
   provide methods that take two options at once and bind them to the same
   variable. (Again, this is like Go's `flag` library.)
@@ -120,6 +124,8 @@ Here are some of the key ways that this library is opinionated.
 + Booleans always default to false, and they never accept arguments. They
   function only as switches: if a boolean option appears on the command line,
   its value becomes true.
++ Options with numeric types are decimal only: opts rejects hex, octal,
+  underscores, NaN, and Inf.
 + Types are limited. The library provides options for the following types:
   boolean, date (using [civil.Date][civil]), duration, float64, int, string, and
   uint. Users cannot extend the types.
