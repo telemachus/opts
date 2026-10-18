@@ -26,6 +26,7 @@ warning-code = 1
 [rule.errorf]
 [rule.exported]
 [rule.flag-parameter]
+  exclude = ["TEST"]
 [rule.if-return]
 [rule.increment-decrement]
 [rule.indent-error-flow]

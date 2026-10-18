@@ -24,6 +24,7 @@ linters:
     - godot
     - govet
     - iface
+    - importas
     - inamedparam
     - ineffassign
     - interfacebloat
@@ -53,6 +54,7 @@ linters:
     - unused
     - usestdlibvars
     - usetesting
+    - varnamelen
     - wastedassign
     - whitespace
     - wrapcheck
@@ -117,6 +119,19 @@ linters:
     nolintlint:
       require-explanation: true
       require-specific: true
+    varnamelen:
+      max-distance: 10
+      min-name-length: 2
+      ignore-decls:
+        - i int
+        - g *Group
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0

@@ -34,7 +34,7 @@ func validateName(funcName, optName string) error {
 // define registers an option of type T. funcName is the name of the calling
 // method, for panic messages. If name is invalid or already defined, define
 // panics without changing *p.
-func define[T any](g *Group, funcName string, p *T, name string, defValue T, convert func(string) (T, error)) {
+func define[T any](g *Group, funcName string, ptr *T, name string, defValue T, convert func(string) (T, error)) {
 	if err := validateName(funcName, name); err != nil {
 		panic(err)
 	}
@@ -44,11 +44,11 @@ func define[T any](g *Group, funcName string, p *T, name string, defValue T, con
 	}
 
 	// Only Bool defines options of type bool, and they take no value.
-	_, isBool := any(p).(*bool)
+	_, isBool := any(ptr).(*bool)
 
-	*p = defValue
+	*ptr = defValue
 	g.opts[name] = &opt{
-		value:  &value[T]{ptr: p, convert: convert},
+		value:  &value[T]{ptr: ptr, convert: convert},
 		isBool: isBool,
 	}
 }

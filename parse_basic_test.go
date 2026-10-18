@@ -197,9 +197,9 @@ func TestParseAllRetryAfterFailure(t *testing.T) {
 	t.Parallel()
 
 	og := opts.NewGroup("test")
-	var s string
+	var name string
 	defValue := "default"
-	og.String(&s, "name", defValue)
+	og.String(&name, "name", defValue)
 
 	badArgs := []string{"--unknown", "value"}
 	goodArgs := []string{"--name", "success"}
@@ -210,8 +210,8 @@ func TestParseAllRetryAfterFailure(t *testing.T) {
 		t.Fatalf("og.ParseAll(%v) returns err == nil; want error", badArgs)
 	}
 
-	if s != defValue {
-		t.Errorf("og.ParseAll(%v) leaves s as %q; want %q", badArgs, s, defValue)
+	if name != defValue {
+		t.Errorf("og.ParseAll(%v) leaves name as %q; want %q", badArgs, name, defValue)
 	}
 
 	// Second attempt should succeed.
@@ -220,8 +220,8 @@ func TestParseAllRetryAfterFailure(t *testing.T) {
 		t.Fatalf("og.ParseAll(%v) returns err == %v; want nil", goodArgs, err)
 	}
 
-	if s != goodArgs[1] {
-		t.Errorf("og.ParseAll(%v) leaves s as %q; want %q", goodArgs, s, goodArgs[1])
+	if name != goodArgs[1] {
+		t.Errorf("og.ParseAll(%v) leaves name as %q; want %q", goodArgs, name, goodArgs[1])
 	}
 }
 
@@ -229,9 +229,9 @@ func TestParseRetryAfterFailure(t *testing.T) {
 	t.Parallel()
 
 	og := opts.NewGroup("test")
-	var s string
+	var name string
 	defValue := "default"
-	og.String(&s, "name", defValue)
+	og.String(&name, "name", defValue)
 
 	badArgs := []string{"--unknown", "value"}
 	goodArgs := []string{"--name", "success", "arg1", "arg2"}
@@ -242,8 +242,8 @@ func TestParseRetryAfterFailure(t *testing.T) {
 		t.Fatalf("og.Parse(%v) returns err == nil; want error", badArgs)
 	}
 
-	if s != defValue {
-		t.Errorf("og.Parse(%v) leaves s as %q; want %q", badArgs, s, defValue)
+	if name != defValue {
+		t.Errorf("og.Parse(%v) leaves name as %q; want %q", badArgs, name, defValue)
 	}
 
 	// Second attempt should succeed.
@@ -252,8 +252,8 @@ func TestParseRetryAfterFailure(t *testing.T) {
 		t.Fatalf("og.Parse(%v) returns err == %v; want nil", goodArgs, err)
 	}
 
-	if s != goodArgs[1] {
-		t.Errorf("og.Parse(%v) leaves s as %q; want %q", goodArgs, s, goodArgs[1])
+	if name != goodArgs[1] {
+		t.Errorf("og.Parse(%v) leaves name as %q; want %q", goodArgs, name, goodArgs[1])
 	}
 
 	expectedRemaining := []string{"arg1", "arg2"}

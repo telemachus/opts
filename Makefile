@@ -14,21 +14,26 @@ golangci:
 
 lint: staticcheck revive golangci
 
-build: testr lint
-	go build .
+vuln:
+	govulncheck ./...
 
 test:
-	go test -shuffle on .
-
-testr:
-	go test -race -shuffle on .
+	go test -shuffle on ./...
 
 testv:
-	go test -shuffle on -v .
+	go test -shuffle on -v ./...
+
+testr:
+	go test -race -shuffle on ./...
+
+build: lint testr
+	go build ./...
 
 clean:
 	go clean
 
-.PHONY: fmt staticcheck revive golangci lint
-.PHONY: test testv testr
-.PHONY: build clean
+cacheclean:
+	go clean -testcache
+
+.PHONY: fmt staticcheck revive golangci lint vuln
+.PHONY: test testv testr build clean cacheclean
